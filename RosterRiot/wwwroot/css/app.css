@@ -399,3 +399,68 @@ b, .big, .num { font-variant-numeric: tabular-nums; }
 @media (min-width: 600px) {
   .content { padding-left: 0; padding-right: 0; }
 }
+
+/* ── Trades ── */
+.deadline { display: flex; align-items: center; gap: 12px; border-color: rgba(255, 181, 71, .45); background: linear-gradient(100deg, rgba(255, 181, 71, .14), var(--panel) 70%); }
+.deadline.soon { border-color: rgba(255, 93, 108, .55); background: linear-gradient(100deg, rgba(255, 93, 108, .16), var(--panel) 70%); }
+.deadline.past { border-color: var(--line); background: var(--panel); }
+.dl-ico { font-size: 28px; }
+.dl-main { min-width: 0; }
+.dl-big { font: italic 800 22px/1.05 var(--display); text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px; }
+.deadline.soon .dl-big { color: #ff9aa4; }
+.ranks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px; }
+.rk { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; border-radius: 10px; background: var(--panel-2); }
+.rk b { font: 800 18px/1 var(--display); }
+.rk.good b { color: var(--green-2); }
+.rk.bad { background: rgba(255, 93, 108, .14); }
+.rk.bad b { color: var(--red); }
+.idea { display: flex; flex-direction: column; gap: 6px; }
+.idea-h { display: flex; align-items: center; gap: 8px; }
+.idea-team { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.idea-lbl { font: 700 12px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }
+.idea .list { margin: 0 -14px; }
+.idea .prow { padding: 7px 14px; }
+.idea-why { font-size: 14px; line-height: 1.45; padding: 8px 10px; border-radius: 10px; background: var(--panel-2); }
+.idea-nums { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
+.idea-nums b { font: 800 16px/1 var(--display); color: var(--text); }
+.idea-nums b.good-txt { color: var(--green-2); }
+.idea .btn { padding: 10px; font-size: 14px; color: var(--gold); }
+.tp .prow-sub { gap: 5px; }
+.tp .prow-sub .pos { min-width: 28px; height: 17px; font-size: 11px; }
+.tp-check { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2); display: grid; place-items: center; font: 800 13px/1 var(--body); color: #04140b; }
+.tp.pick { cursor: pointer; user-select: none; }
+.tp.pick.on { background: linear-gradient(90deg, rgba(61, 220, 138, .16), transparent); }
+.tp.pick.on .tp-check { background: var(--gold); border-color: var(--gold); }
+.verdict { display: flex; flex-direction: column; gap: 10px; scroll-margin: 80px; }
+.verdict.v-accept { border-color: rgba(111, 240, 168, .55); }
+.verdict.v-decline { border-color: rgba(255, 93, 108, .55); }
+.verdict.v-fair { border-color: rgba(255, 181, 71, .5); }
+.v-head { display: flex; align-items: baseline; gap: 10px; }
+.v-call { font: italic 800 34px/1 var(--display); letter-spacing: .02em; }
+.v-accept .v-call { color: var(--green-2); }
+.v-decline .v-call { color: var(--red); }
+.v-fair .v-call { color: var(--amber); }
+.v-why { font-size: 14.5px; line-height: 1.45; }
+.v-grid { display: grid; grid-template-columns: 1fr 92px 70px; gap: 6px 8px; align-items: center; }
+.v-grid > b, .v-grid > .muted { text-align: right; }
+.v-grid > b { font: 800 20px/1 var(--display); }
+.v-team { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v-weeks { display: flex; gap: 4px; }
+.v-wk { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; border-radius: 10px; background: var(--panel-2); font-size: 11px; }
+.v-wk.po { box-shadow: inset 0 0 0 1px rgba(61, 220, 138, .4); }
+.v-wk b { font: 800 15px/1 var(--display); }
+.v-value { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12.5px; color: var(--muted); }
+.v-value b { color: var(--text); font: 800 16px/1 var(--display); }
+.v-bar {
+  position: sticky; bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 10px); z-index: 15;
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px;
+  background: rgba(18, 41, 75, .96); border: 1px solid var(--line-2); box-shadow: 0 8px 24px rgba(0, 0, 0, .45); font-size: 13px;
+}
+.v-bar b { font: italic 800 20px/1 var(--display); }
+.v-bar.v-accept b { color: var(--green-2); }
+.v-bar.v-decline b { color: var(--red); }
+.v-bar.v-fair b { color: var(--amber); }
+.v-bar .chev { font-size: 20px; }
+.explain p { font-size: 13.5px; }
+.tab span { white-space: nowrap; }
+.idea.long { border-color: rgba(255, 181, 71, .35); }

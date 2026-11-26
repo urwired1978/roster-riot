@@ -34,6 +34,57 @@ public sealed class SleeperClient(HttpClient http)
     public Task<List<StatRow>?> Projections(string season, int week) =>
         Get<List<StatRow>>($"{Web}/projections/nfl/{season}/{week}?season_type=regular&{ProjPositions}");
 
+    /// <summary>
+    /// One week's projections boiled down to player id → fantasy points under <paramref name="scoring"/>.
+    /// The feed is about 2 MB, so it's read with a streaming reader that skips everything but the stats,
+    /// which is many times faster on a phone than building full objects.
+    /// </summary>
+    public async Task<Dictionary<string, double>> ProjectedPoints(string season, int week, IReadOnlyDictionary<string, double?> scoring)
+    {
+        var bytes = await http.GetByteArrayAsync($"{Web}/projections/nfl/{season}/{week}?season_type=regular&{ProjPositions}");
+        return ParsePoints(bytes, scoring);
+    }
+
+    static Dictionary<string, double> ParsePoints(byte[] json, IReadOnlyDictionary<string, double?> scoring)
+    {
+        var result = new Dictionary<string, double>();
+        var reader = new Utf8JsonReader(json);
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartArray) return result;
+        while (reader.Read() && reader.TokenType == JsonTokenType.StartObject)
+        {
+            string? pid = null;
+            double pts = 0;
+            while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
+            {
+                if (reader.ValueTextEquals("player_id"u8))
+                {
+                    reader.Read();
+                    pid = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+                }
+                else if (reader.ValueTextEquals("stats"u8))
+                {
+                    reader.Read();
+                    if (reader.TokenType != JsonTokenType.StartObject) { reader.Skip(); continue; }
+                    while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
+                    {
+                        var key = reader.GetString()!;
+                        reader.Read();
+                        if (reader.TokenType == JsonTokenType.Number && scoring.TryGetValue(key, out var m) && m is { } mult)
+                            pts += reader.GetDouble() * mult;
+                        else reader.Skip();
+                    }
+                }
+                else
+                {
+                    reader.Read();
+                    reader.Skip();
+                }
+            }
+            if (pid is not null) result.TryAdd(pid, Math.Round(pts, 2));
+        }
+        return result;
+    }
+
     /// <summary>One player's stats, keyed by week number ("1".."18"); a week is null when he didn't play.</summary>
     public Task<Dictionary<string, StatRow?>?> PlayerWeeks(string playerId, string season) =>
         Get<Dictionary<string, StatRow?>>($"{Web}/stats/nfl/player/{playerId}?season_type=regular&season={season}&grouping=week");

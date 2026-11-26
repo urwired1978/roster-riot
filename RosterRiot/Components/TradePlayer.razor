@@ -1,0 +1,37 @@
+@inherits LivePage
+@inject TradeService T
+@* One player in a trade: rest-of-season points and trade value. Tapping opens the player card.
+   With OnToggle set, tapping the row picks him for the trade and only the photo opens the card. *@
+@if (OnToggle.HasDelegate)
+{
+    <div class="prow tp pick @(Selected ? "on" : "")" @onclick="() => OnToggle.InvokeAsync(Pid)">
+        <span class="tp-check">@(Selected ? "✓" : "")</span>
+        <a href="player/@Pid" @onclick:stopPropagation="true" aria-label="Player card"><Headshot Pid="@Pid" Size="38" /></a>
+        @Body
+    </div>
+}
+else
+{
+    <a class="prow tp" href="player/@Pid">
+        <Headshot Pid="@Pid" Size="38" />
+        @Body
+    </a>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Pid { get; set; } = "";
+    [Parameter] public string? Note { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback<string> OnToggle { get; set; }
+
+    RenderFragment Body => @<text>
+        <span class="prow-main">
+            <span class="prow-name">@S.Name(Pid) <InjuryTag Status="@S.Injury(Pid)" /></span>
+            <span class="prow-sub"><PosChip Pos="@S.Pos(Pid)" /> <b>@S.NflTeam(Pid)</b> @if (Note is { Length: > 0 }) { <span>@Note</span> }</span>
+        </span>
+        <span class="prow-nums">
+            <span class="big proj">@T.Ros(Pid).ToString("0")</span>
+            <span class="small">value @T.Value(Pid).ToString("0")</span>
+        </span>
+    </text>;
+}
