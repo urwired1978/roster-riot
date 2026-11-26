@@ -1,10 +1,9 @@
-#Requires -Version 7
 # Prepares a published Blazor wwwroot folder for hosting under a subpath (GitHub Pages project site).
 #  - rewrites <base href> in index.html and the service worker's base constant
 #  - fixes index.html's integrity hash in service-worker-assets.js (otherwise the PWA's offline install fails)
 #  - adds .nojekyll and copies index.html to 404.html so deep links load the app
 # Used by .github/workflows/deploy.yml (pwsh on ubuntu) and for local Pages emulation.
-# Usage: pwsh scripts/set-base-path.ps1 -Root <publish>/wwwroot -BasePath /roster-riot/
+# Usage: pwsh (or powershell) scripts/set-base-path.ps1 -Root <publish>/wwwroot -BasePath /roster-riot/
 param(
     [Parameter(Mandatory)] [string]$Root,
     [Parameter(Mandatory)] [string]$BasePath
@@ -30,7 +29,8 @@ Edit-File "index.html" '<base href="[^"]*"\s*/?>' "<base href=`"$BasePath`" />"
 Edit-File "service-worker.js" 'const base = "[^"]*";' "const base = `"$BasePath`";"
 
 $index = Join-Path $Root "index.html"
-$hash = "sha256-" + [Convert]::ToBase64String([Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($index)))
+$sha = [Security.Cryptography.SHA256]::Create()   # works in Windows PowerShell 5.1 and PowerShell 7
+$hash = "sha256-" + [Convert]::ToBase64String($sha.ComputeHash([IO.File]::ReadAllBytes($index)))
 Edit-File "service-worker-assets.js" '"hash": "sha256-[^"]*",(\s*)"url": "index.html"' "`"hash`": `"$hash`",`$1`"url`": `"index.html`""
 
 Copy-Item $index (Join-Path $Root "404.html") -Force

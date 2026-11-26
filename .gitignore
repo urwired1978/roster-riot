@@ -11,3 +11,6 @@ feature-*/
 # Local only
 *.lnk
 .claude/settings.local.json
+
+# Local dev launch configs (machine-specific paths)
+.claude/

@@ -190,12 +190,14 @@ Then open http://localhost:5084. Build output goes to `%LOCALAPPDATA%\RosterRiot
 
 ## Put it on an iPhone
 
-The app has to be on the web for the phone to reach it from anywhere. The plan is the same as the earlier
-NFL app: a GitHub repo with GitHub Pages (free). `.github/workflows/deploy.yml` publishes it on every
-push, and `scripts/set-base-path.ps1` fixes paths for the Pages subfolder. **Nothing has been published yet.**
+Roster Riot is hosted free on GitHub Pages: **https://urwired1978.github.io/roster-riot/**
 
-On the iPhone: open the link in **Safari**, tap **Share**, then **Add to Home Screen**. It opens full screen
-with the Roster Riot icon.
+On the iPhone: open that link in **Safari**, tap **Share**, then **Add to Home Screen**. It opens full screen
+with the Roster Riot icon, like a real app.
+
+Every push to `main` rebuilds and redeploys it (`.github/workflows/deploy.yml`, about 2-3 minutes).
+`scripts/set-base-path.ps1` points the app at the `/roster-riot/` subfolder Pages serves it from. The
+phone picks up a new version the next time the app is opened.
 
 ## Change the league or team
 
