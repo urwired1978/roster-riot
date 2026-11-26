@@ -1,0 +1,13 @@
+# Build output
+bin/
+obj/
+publish/
+.vs/
+*.user
+
+# Work-in-progress copies used by parallel sessions (merged via branches, not tracked here)
+feature-*/
+
+# Local only
+*.lnk
+.claude/settings.local.json

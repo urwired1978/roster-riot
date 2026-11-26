@@ -1,0 +1,16 @@
+@* Player photo from Sleeper's CDN; falls back to initials if there's no photo. *@
+<span class="hs @Class" style="width:@(Size)px;height:@(Size)px">
+    <span class="hs-init">@Initials</span>
+    @if (Pid is { Length: > 0 } && Pid != "0")
+    {
+        <img src="@SleeperClient.Headshot(Pid)" loading="lazy" alt="" onerror="this.remove()" />
+    }
+</span>
+
+@code {
+    [Inject] LeagueService S { get; set; } = default!;
+    [Parameter] public string? Pid { get; set; }
+    [Parameter] public int Size { get; set; } = 40;
+    [Parameter] public string? Class { get; set; }
+    string Initials => S.Info(Pid) is { } p ? $"{p.FirstName?.FirstOrDefault()}{p.LastName?.FirstOrDefault()}" : "–";
+}

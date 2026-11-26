@@ -1,0 +1,7 @@
+<Project>
+  <!-- This folder lives in OneDrive, so build output (bin/obj) goes to %LOCALAPPDATA%\RosterRiot\artifacts
+       instead, which keeps thousands of build files from churning OneDrive sync. -->
+  <PropertyGroup Condition="'$(LOCALAPPDATA)' != '' and $(MSBuildThisFileDirectory.Contains('OneDrive'))">
+    <ArtifactsPath>$(LOCALAPPDATA)\RosterRiot\artifacts</ArtifactsPath>
+  </PropertyGroup>
+</Project>

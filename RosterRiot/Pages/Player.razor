@@ -1,0 +1,90 @@
+@page "/player/{Pid}"
+@inherits LivePage
+
+<PageTitle>@S.Name(Pid) · Roster Riot</PageTitle>
+
+@{
+    var info = S.Info(Pid);
+    var owner = S.OwnerOf(Pid);
+    var played = season?.Where(w => w.Points is not null && (w.Week < S.Week || S.Game(Pid)?.IsFinal == true)).ToList() ?? [];
+    var avg = played.Count > 0 ? played.Average(w => w.Points!.Value) : 0;
+    var trend = S.TrendCount(Pid);
+}
+
+<button class="back" onclick="history.back()">‹ Back</button>
+
+<section class="p-hero">
+    <Headshot Pid="@Pid" Size="96" Class="big" />
+    <div class="p-main">
+        <h1>@S.Name(Pid)</h1>
+        <div class="p-sub">
+            <PosChip Pos="@S.Pos(Pid)" />
+            @if (info?.Team is { } team) { <img class="p-logo" src="@SleeperClient.TeamLogo(team)" alt="" /> <span>@team</span> }
+            @if (info?.Number is { } num) { <span class="muted">#@num</span> }
+            <InjuryTag Status="@info?.InjuryStatus" />
+        </div>
+        @if (info?.InjuryStatus is { } inj) { <div class="p-inj">@inj@(info.InjuryBodyPart is { } bp ? $" ({bp})" : "")</div> }
+        <div class="p-owner">
+            @if (owner is null) { <span class="tag good">FREE AGENT</span> }
+            else if (S.IsMine(owner)) { <span class="tag gold">ON YOUR TEAM</span> }
+            else { <a href="team/@owner.RosterId" class="tag">@S.TeamName(owner)</a> }
+            @if (trend > 0) { <span class="tag hot">🔥 +@trend.ToString("N0") adds today</span> }
+        </div>
+    </div>
+</section>
+
+<section class="card p-week">
+    <div class="pw-cell"><div class="pw-num">@F1(S.LivePoints(Pid))</div><div class="muted small">Wk @S.Week pts</div></div>
+    <div class="pw-cell"><div class="pw-num">@F1(S.ProjOf(Pid))</div><div class="muted small">Projection</div></div>
+    <div class="pw-cell"><div class="pw-num">@F1(avg)</div><div class="muted small">Avg / game</div></div>
+    <div class="pw-cell"><div class="pw-num">@played.Count</div><div class="muted small">Games</div></div>
+</section>
+<div class="center"><GameTag Pid="@Pid" /></div>
+
+<h2 class="sec">Fantasy points by week</h2>
+<section class="card">
+    @if (season is null) { <div class="muted center">Loading…</div> }
+    else
+    {
+        <WeekBars Values="@season.Select(w => w.Points).ToList()" Average="@avg" />
+        <div class="muted small center">League scoring (full PPR) · dashed line = his average · – = didn't play</div>
+    }
+</section>
+
+@if (season is not null && played.Count > 0)
+{
+    <h2 class="sec">Game log</h2>
+    <section class="card list log">
+        <div class="log-row head muted small"><span>Wk</span><span>Opp</span><span>Pts</span><span>Pos rank</span></div>
+        @foreach (var w in season.Where(w => w.Points is not null).Reverse())
+        {
+            <div class="log-row">
+                <span>@w.Week</span>
+                <span>@w.Opponent</span>
+                <span class="@(w.Points >= avg ? "good-txt" : "")">@F1(w.Points!.Value)</span>
+                <span class="muted">@(w.PosRank is { } r ? $"{S.Pos(Pid)}{r}" : "")</span>
+            </div>
+        }
+    </section>
+}
+
+@if (info is not null)
+{
+    var bits = new[] { info.College, info.YearsExp is { } y ? (y == 0 ? "Rookie" : $"{y} yr{(y == 1 ? "" : "s")} in the NFL") : null }.Where(b => !string.IsNullOrEmpty(b));
+    <div class="muted small center">@string.Join(" · ", bits)</div>
+}
+
+@code {
+    [Parameter] public string Pid { get; set; } = "";
+    List<WeekPoints>? season;
+    string? loadedFor;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await S.EnsureLoadedAsync();
+        if (loadedFor == Pid) return;
+        loadedFor = Pid;
+        season = null;
+        season = await S.PlayerSeasonAsync(Pid);
+    }
+}

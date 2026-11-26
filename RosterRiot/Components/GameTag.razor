@@ -1,0 +1,47 @@
+@inherits LivePage
+@* "vs TEN · Sun 1:00 PM", "LIVE 4th 1:51", "Final 35-32", or "BYE" for a player. *@
+@{
+    var g = S.Game(Pid);
+    var team = S.NflTeam(Pid);
+}
+@if (team is null) { <span class="gt muted">Free agent</span> }
+else if (g is null) { <span class="gt bye">@team · BYE</span> }
+else
+{
+    var mine = g.Side(team)!;
+    var opp = g.Other(team);
+    var vs = g.Home.Abbr == team ? "vs" : "@";
+    if (Compact)
+    {
+        if (g.IsLive) { <span class="gt live"><span class="pulse"></span>@Quarter(g)</span> }
+        else if (g.IsFinal) { <span class="gt final">Final @mine.Score–@opp.Score</span> }
+        else { <span class="gt">@vs @opp.Abbr · @Kick(g)</span> }
+    }
+    else if (g.IsLive)
+    {
+        <span class="gt live"><span class="pulse"></span>@team @mine.Score–@opp.Score @opp.Abbr · @Quarter(g)</span>
+    }
+    else if (g.IsFinal)
+    {
+        <span class="gt final">@(mine.Score > opp.Score ? "W" : mine.Score < opp.Score ? "L" : "T") @mine.Score–@opp.Score @vs @opp.Abbr</span>
+    }
+    else
+    {
+        <span class="gt">@team @vs @opp.Abbr · @Kick(g)</span>
+    }
+}
+
+@code {
+
+    [Parameter] public string? Pid { get; set; }
+    [Parameter] public bool Compact { get; set; }
+
+    public static string Kick(NflGame g)
+    {
+        var t = g.Kickoff.ToLocalTime();
+        var days = (t.Date - DateTime.Now.Date).TotalDays;
+        var day = days == 0 ? "Today" : days == 1 ? "Tmrw" : t.ToString("ddd");
+        return $"{day} {t.ToString(t.Minute == 0 ? "htt" : "h:mmtt").ToLowerInvariant()}";
+    }
+    public static string Quarter(NflGame g) => g.Detail.Contains("Half") ? "Half" : g.Period > 4 ? $"OT {g.Clock}" : $"Q{g.Period} {g.Clock}";
+}

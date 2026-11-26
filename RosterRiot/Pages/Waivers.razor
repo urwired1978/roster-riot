@@ -1,0 +1,79 @@
+@page "/waivers"
+@inherits LivePage
+
+<PageTitle>Pickups · Roster Riot</PageTitle>
+
+@{
+    var me = S.MyRoster;
+    var fa = S.FreeAgents.Where(p => pos == "ALL" || S.Pos(p) == pos)
+        .Where(p => S.Pos(p) is "QB" or "RB" or "WR" or "TE" or "K")
+        .Where(p => !S.Locked(p) && !S.OnBye(p))   // only guys who can still play this week
+        .OrderByDescending(S.ProjOf).Take(30).ToList();
+    var hot = S.Trending.Where(t => S.OwnerOf(t.PlayerId) is null && S.Info(t.PlayerId) is not null).Take(8).ToList();
+}
+
+<section class="card faab">
+    <div>
+        <div class="faab-num">$@S.FaabLeft(me)</div>
+        <div class="muted small">FAAB left</div>
+    </div>
+    <div>
+        <div class="faab-num">#@(me?.Setting("waiver_position"))</div>
+        <div class="muted small">Waiver priority</div>
+    </div>
+    <div class="faab-tip small">
+        @if (S.FaabLeft(me) == 0)
+        {
+            <span>No FAAB left, so waiver bids are out. You can still grab anyone once waivers clear and he's a free agent.</span>
+        }
+        else
+        {
+            <span>Bid big on the 🔥 guys. Everyone else is chasing them too.</span>
+        }
+    </div>
+</section>
+
+@if (hot.Count > 0)
+{
+    <h2 class="sec">🔥 Trending pickups across Sleeper (24h)</h2>
+    <div class="hscroll">
+        @foreach (var t in hot)
+        {
+            <a class="hot" href="player/@t.PlayerId">
+                <Headshot Pid="@t.PlayerId" Size="54" />
+                <span class="hot-name">@S.Short(t.PlayerId)</span>
+                <span class="hot-sub"><PosChip Pos="@S.Pos(t.PlayerId)" /> @S.NflTeam(t.PlayerId)</span>
+                <span class="hot-count">+@(t.Count.ToString("N0")) adds</span>
+                <span class="hot-proj">Proj @F1(S.ProjOf(t.PlayerId))</span>
+            </a>
+        }
+    </div>
+}
+
+<h2 class="sec">Best free agents still to play</h2>
+<div class="chips">
+    @foreach (var p in new[] { "ALL", "QB", "RB", "WR", "TE", "K" })
+    {
+        <button class="chip @(pos == p ? "on" : "")" @onclick="() => pos = p">@p</button>
+    }
+</div>
+
+<section class="card list">
+    @foreach (var pid in fa)
+    {
+        var (weak, weakProj) = S.WeakestStarterFor(S.Pos(pid));
+        var up = S.ProjOf(pid) - weakProj;
+        <PlayerRow Pid="@pid" ShowLive="false">
+            @if (up > 0.5 && !S.Locked(pid))
+            {
+                <span class="upgrade" title="Over @S.Name(weak)">▲@F1(up)</span>
+            }
+        </PlayerRow>
+    }
+    @if (fa.Count == 0) { <p class="muted">No free agents with projections at this position.</p> }
+</section>
+<p class="muted small center">▲ = projected points more than your weakest starter who plays that spot.</p>
+
+@code {
+    string pos = "ALL";
+}

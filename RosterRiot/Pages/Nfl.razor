@@ -1,0 +1,59 @@
+@page "/nfl"
+@inherits LivePage
+
+<PageTitle>NFL · Roster Riot</PageTitle>
+
+@{
+    var me = S.MyRoster;
+    var starters = me?.Starters ?? [];
+    var mine = me?.Players ?? [];
+    var opp = S.MyMatchup()?.B?.Roster?.Starters ?? [];
+}
+
+<h2 class="sec">NFL Week @S.Week</h2>
+@if (S.Games.Count == 0) { <div class="card empty">Couldn't load NFL games right now.</div> }
+
+@foreach (var day in S.Games.GroupBy(g => g.Kickoff.ToLocalTime().Date))
+{
+    <div class="day">@day.Key.ToString("dddd, MMM d")</div>
+    @foreach (var g in day)
+    {
+        var teams = new[] { g.Away.Abbr, g.Home.Abbr };
+        var myGuys = mine.Where(p => teams.Contains(S.NflTeam(p))).OrderByDescending(p => starters.Contains(p)).ToList();
+        var theirGuys = opp.Where(p => p != "0" && teams.Contains(S.NflTeam(p))).ToList();
+        <section class="card game @(g.IsLive ? "is-live" : "") @(myGuys.Any(starters.Contains) ? "has-mine" : "")">
+            <div class="g-status">
+                @if (g.IsLive) { <span class="live-pill"><span class="pulse"></span>LIVE · @GameTag.Quarter(g)</span> }
+                else if (g.IsFinal) { <span class="final-pill">FINAL</span> }
+                else { <span>@g.Kickoff.ToLocalTime().ToString("h:mm tt")</span> }
+                <span class="muted">@g.Network</span>
+            </div>
+            @foreach (var side in new[] { g.Away, g.Home })
+            {
+                var lead = g.HasStarted && side.Score > g.Other(side.Abbr).Score;
+                <div class="g-team @(lead ? "lead" : "")">
+                    <img src="@(side.Logo ?? SleeperClient.TeamLogo(side.Abbr))" alt="" onerror="this.style.visibility='hidden'" />
+                    <span class="g-name">@side.Name <small>@side.Record</small></span>
+                    @if (g.IsLive && g.PossessionTeamId == side.Id) { <span class="poss">🏈</span> }
+                    <span class="g-score">@(g.HasStarted ? side.Score.ToString() : "")</span>
+                </div>
+            }
+            @if (g.IsLive && g.DownDistance is { } dd) { <div class="g-sit @(g.RedZone ? "rz" : "")">@dd @(g.RedZone ? "· RED ZONE" : "")</div> }
+            @if (!g.HasStarted && g.Odds is { } odds) { <div class="g-sit muted">Line: @odds</div> }
+            @if (myGuys.Count > 0 || theirGuys.Count > 0)
+            {
+                <div class="g-mine">
+                    @foreach (var p in myGuys)
+                    {
+                        <a class="gm @(starters.Contains(p) ? "start" : "bench")" href="player/@p">@S.Short(p) <b>@(g.HasStarted ? F1(S.LivePoints(p)) : "")</b></a>
+                    }
+                    @foreach (var p in theirGuys)
+                    {
+                        <a class="gm opp" href="player/@p">@S.Short(p) <b>@(g.HasStarted ? F1(S.LivePoints(p)) : "")</b></a>
+                    }
+                </div>
+            }
+        </section>
+    }
+}
+<p class="muted small center"><span class="gm start">green</span> your starters · <span class="gm bench">gray</span> your bench · <span class="gm opp">red</span> this week's opponent</p>

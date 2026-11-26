@@ -1,0 +1,49 @@
+# Publishes Roster Riot to GitHub Pages on every push to main.
+# The app pulls live data from Sleeper and ESPN on the phone, so there is no data sync step.
+name: Deploy Roster Riot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+      - name: Publish app
+        run: dotnet publish RosterRiot -c Release -o publish
+      - name: Set base path for GitHub Pages
+        shell: pwsh
+        run: |
+          $repo = "${{ github.event.repository.name }}"
+          $base = if ($repo -like "*.github.io") { "/" } else { "/$repo/" }
+          ./scripts/set-base-path.ps1 -Root publish/wwwroot -BasePath $base
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: publish/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,154 @@
+﻿@page "/"
+@page "/matchup/{Id:int}"
+@inherits LivePage
+
+<PageTitle>Matchup · Roster Riot</PageTitle>
+
+@{
+    var m = Id is { } id ? S.BuildMatchup(id) : S.MyMatchup();
+    var isMine = m is not null && S.IsMine(m.A.Roster);
+}
+
+@if (m is null)
+{
+    <div class="card empty">No matchup this week. Enjoy the break.</div>
+}
+else
+{
+    var a = m.A;
+    var b = m.B;
+    <section class="hero">
+        <div class="hero-week">
+            WEEK @m.Week @(isMine ? "· YOUR MATCHUP" : "")
+            @if (S.Week >= S.PlayoffStart) { <span class="tag gold">PLAYOFFS</span> }
+        </div>
+        <div class="hero-row">
+            <div class="hero-team">
+                <Avatar Url="@a.Avatar" Name="@a.Name" Size="52" />
+                <div class="hero-name">@a.Name</div>
+                <div class="hero-rec">@Rec(a.Roster)</div>
+            </div>
+            <div class="hero-mid">
+                <div class="hero-scores">
+                    <span class="@(a.Points >= (b?.Points ?? 0) ? "lead" : "")">@F2(a.Points)</span>
+                    <span class="dash">–</span>
+                    <span class="@((b?.Points ?? 0) > a.Points ? "lead" : "")">@F2(b?.Points ?? 0)</span>
+                </div>
+                <div class="hero-proj">Proj @F1(a.Projected) – @F1(b?.Projected ?? 0)</div>
+                <WinRing Pct="@m.WinA" Size="78" />
+            </div>
+            <div class="hero-team">
+                <Avatar Url="@b?.Avatar" Name="@b?.Name" Size="52" />
+                <div class="hero-name">@(b?.Name ?? "Bye")</div>
+                <div class="hero-rec">@Rec(b?.Roster)</div>
+            </div>
+        </div>
+        <div class="tug">
+            <div class="tug-a" style="width:@((m.WinA * 100).ToString("0.#"))%"></div>
+        </div>
+        <div class="hero-left">
+            <span><b>@a.Playing</b> playing · <b>@a.YetToPlay</b> to go</span>
+            <span><b>@(b?.Playing ?? 0)</b> playing · <b>@(b?.YetToPlay ?? 0)</b> to go</span>
+        </div>
+    </section>
+
+    @if (S.PlaysMedian && isMine)
+    {
+        var race = S.MedianRace();
+        var place = race.FindIndex(x => x.Roster.RosterId == a.RosterId) + 1;
+        var half = race.Count / 2;
+        <section class="card median">
+            <div class="card-h">
+                <span>vs. League Median</span>
+                <span class="tag @(place <= half ? "good" : "bad")">@(place <= half ? "ON PACE FOR A W" : "ON PACE FOR AN L")</span>
+            </div>
+            <p class="muted small">This league gives a second win each week for finishing in the top half of all 12 scores.
+                Projected finish: <b class="txt">@Ordinal(place) of @race.Count</b>.</p>
+            <div class="median-bars">
+                @for (var i = 0; i < race.Count; i++)
+                {
+                    var (r, exp) = race[i];
+                    var max = race[0].Expected;
+                    <div class="mb @(r.RosterId == a.RosterId ? "me" : "") @(i < half ? "top" : "")" title="@S.TeamName(r)">
+                        <span style="height:@((max > 0 ? exp / max * 100 : 0).ToString("0"))%"></span>
+                    </div>
+                    @if (i == half - 1) { <div class="mb-line"></div> }
+                }
+            </div>
+        </section>
+    }
+
+    @if (isMine)
+    {
+        var adv = LineupCoach.Advise(S, a.Roster);
+        if (!adv.IsOptimal || adv.Alerts.Count > 0)
+        {
+            <a class="card coach-mini" href="team">
+                <span class="coach-ico">🧠</span>
+                <span>
+                    <b>Lineup Coach</b><br />
+                    @if (!adv.IsOptimal) { <span>@($"{adv.Swaps.Count} change{(adv.Swaps.Count == 1 ? "" : "s")} could add ")<b class="good-txt">+@F1(adv.Gain)</b>@(" pts. ")</span> }
+                    @if (adv.Alerts.Count > 0) { <span class="muted">@($"{adv.Alerts.Count} lineup alert{(adv.Alerts.Count == 1 ? "" : "s")}.")</span> }
+                </span>
+                <span class="chev">›</span>
+            </a>
+        }
+    }
+
+    <section class="card versus">
+        @for (var i = 0; i < a.Lines.Count; i++)
+        {
+            var la = a.Lines[i];
+            var lb = b is not null && i < b.Lines.Count ? b.Lines[i] : null;
+            <div class="vs-row">
+                <a class="vs-side left" href="@(la.Pid is null ? null : $"player/{la.Pid}")">
+                    <Headshot Pid="@la.Pid" Size="36" />
+                    <span class="vs-txt">
+                        <span class="vs-name">@S.Last(la.Pid) <InjuryTag Status="@S.Injury(la.Pid)" /></span>
+                        <span class="vs-sub"><GameTag Pid="@la.Pid" Compact="true" /></span>
+                    </span>
+                    <span class="vs-pts @PtsClass(la, lb)">@F1(la.Points)<small>@F1(la.Proj)</small></span>
+                </a>
+                <PosChip Pos="@la.Slot" />
+                <a class="vs-side right" href="@(lb?.Pid is null ? null : $"player/{lb.Pid}")">
+                    <span class="vs-pts @PtsClass(lb, la)">@F1(lb?.Points ?? 0)<small>@F1(lb?.Proj ?? 0)</small></span>
+                    <span class="vs-txt">
+                        <span class="vs-name">@S.Last(lb?.Pid) <InjuryTag Status="@S.Injury(lb?.Pid)" /></span>
+                        <span class="vs-sub"><GameTag Pid="@lb?.Pid" Compact="true" /></span>
+                    </span>
+                    <Headshot Pid="@lb?.Pid" Size="36" />
+                </a>
+            </div>
+        }
+        <div class="vs-legend muted small">Big number = points so far · small number = projection</div>
+    </section>
+
+    <h2 class="sec">Around the league</h2>
+    <div class="hscroll">
+        @foreach (var other in S.ThisWeek.Select(x => x.MatchupId).Where(x => x is not null).Distinct().OrderBy(x => x))
+        {
+            var om = S.BuildMatchup(other!.Value);
+            if (om is null || om.MatchupId == m.MatchupId) continue;
+            <a class="mini" href="matchup/@om.MatchupId">
+                <div class="mini-row @(om.A.Points >= (om.B?.Points ?? 0) ? "lead" : "")"><Avatar Url="@om.A.Avatar" Name="@om.A.Name" Size="22" /><span class="mini-name">@om.A.Name</span><b>@F1(om.A.Points)</b></div>
+                <div class="mini-row @((om.B?.Points ?? 0) > om.A.Points ? "lead" : "")"><Avatar Url="@om.B?.Avatar" Name="@om.B?.Name" Size="22" /><span class="mini-name">@om.B?.Name</span><b>@F1(om.B?.Points ?? 0)</b></div>
+                <div class="mini-win">@Math.Round(Math.Max(om.WinA, 1 - om.WinA) * 100)% @(om.WinA >= 0.5 ? om.A.Name : om.B?.Name)</div>
+            </a>
+        }
+    </div>
+    @if (!isMine)
+    {
+        <a class="btn" href="">← Back to my matchup</a>
+    }
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    string Rec(Roster? r) => r is null ? "" : $"{r.Wins}-{r.Losses}{(r.Ties > 0 ? $"-{r.Ties}" : "")}";
+
+    static string PtsClass(SlotLine? me, SlotLine? them) =>
+        me is null || me.Remaining >= 0.999 && me.Points == 0 ? "pending" : them is null || me.Points >= them.Points ? "win" : "";
+
+    static string Ordinal(int n) => n + (n % 100 is 11 or 12 or 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" });
+}

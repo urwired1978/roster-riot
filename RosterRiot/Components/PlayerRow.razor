@@ -1,0 +1,32 @@
+@inherits LivePage
+@* One player line for roster lists. Tapping opens the player card. *@
+<a class="prow @(Dim ? "dim" : "")" href="player/@Pid">
+    @if (Slot is not null) { <PosChip Pos="@Slot" /> }
+    <Headshot Pid="@Pid" Size="42" />
+    <span class="prow-main">
+        <span class="prow-name">@S.Name(Pid) <InjuryTag Status="@S.Injury(Pid)" /></span>
+        <span class="prow-sub"><b>@S.Pos(Pid)</b> <GameTag Pid="@Pid" /></span>
+    </span>
+    <span class="prow-nums">
+        @if (ShowLive && S.Locked(Pid))
+        {
+            <span class="big">@S.LivePoints(Pid).ToString("0.0")</span>
+            <span class="small">proj @S.ProjOf(Pid).ToString("0.0")</span>
+        }
+        else
+        {
+            <span class="big proj">@S.ProjOf(Pid).ToString("0.0")</span>
+            <span class="small">avg @(S.SeasonAvg(Pid!) is var a && a > 0 ? a.ToString("0.0") : "–")</span>
+        }
+    </span>
+    @ChildContent
+</a>
+
+@code {
+
+    [Parameter, EditorRequired] public string? Pid { get; set; }
+    [Parameter] public string? Slot { get; set; }
+    [Parameter] public bool ShowLive { get; set; } = true;
+    [Parameter] public bool Dim { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

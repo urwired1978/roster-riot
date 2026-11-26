@@ -1,0 +1,10 @@
+@if (Status is { Length: > 0 } s)
+{
+    <span class="inj inj-@Css(s)" title="@s">@Short(s)</span>
+}
+
+@code {
+    [Parameter] public string? Status { get; set; }
+    static string Short(string s) => s switch { "Questionable" => "Q", "Doubtful" => "D", "Out" => "OUT", "Sus" => "SUS", _ => s.ToUpperInvariant() };
+    static string Css(string s) => s switch { "Questionable" => "q", "Doubtful" => "d", _ => "o" };
+}

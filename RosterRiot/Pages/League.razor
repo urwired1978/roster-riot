@@ -1,0 +1,136 @@
+@page "/league"
+@inherits LivePage
+
+<PageTitle>League · Roster Riot</PageTitle>
+
+@{
+    var table = S.Standings();
+    var cut = S.PlayoffTeams;
+    var weeksLeft = Math.Max(0, S.PlayoffStart - S.Week);
+}
+
+<div class="seg">
+    @foreach (var t in new[] { "Standings", "Power", "Scores", "Moves" })
+    {
+        <button class="@(tab == t ? "on" : "")" @onclick="() => tab = t">@t</button>
+    }
+</div>
+
+@switch (tab)
+{
+    case "Standings":
+        <section class="card list standings">
+            <div class="st-head muted small"><span>#</span><span>Team</span><span>W-L</span><span>PF</span></div>
+            @foreach (var row in table)
+            {
+                <a class="st-row @(S.IsMine(row.Roster) ? "me" : "")" href="team/@row.Roster.RosterId">
+                    <span class="st-rank @(row.Rank <= cut ? "in" : "")">@row.Rank</span>
+                    <span class="st-team"><Avatar Url="@row.Avatar" Name="@row.Name" Size="30" /><span class="st-name">@row.Name<small>@(row.Streak)</small></span></span>
+                    <span class="st-wl">@row.Wins-@row.Losses</span>
+                    <span class="st-pf">@row.PointsFor.ToString("0")</span>
+                </a>
+                @if (row.Rank == cut) { <div class="cutline"><span>PLAYOFF LINE · top @cut make it</span></div> }
+            }
+        </section>
+        <p class="muted small center">
+            @(weeksLeft > 0 ? $"{weeksLeft} regular-season week{(weeksLeft == 1 ? "" : "s")} left, counting this one." : "Playoff time.")
+            @if (S.PlaysMedian) { <span> Each week counts twice: once vs. your opponent and once vs. the league median.</span> }
+        </p>
+        <PlayoffOdds Table="@table" />
+        break;
+
+    case "Power":
+        <section class="card list">
+            <div class="pw-head muted small"><span>#</span><span>Team</span><span>All-play</span><span>Luck</span></div>
+            @foreach (var row in table.OrderBy(x => x.PowerRank))
+            {
+                <a class="pw-row @(S.IsMine(row.Roster) ? "me" : "")" href="team/@row.Roster.RosterId">
+                    <span class="st-rank">@row.PowerRank</span>
+                    <span class="st-team"><Avatar Url="@row.Avatar" Name="@row.Name" Size="30" />
+                        <span class="st-name">@row.Name<small>Last 3: @F1(row.Last3Avg) ppg · @Move(row)</small></span></span>
+                    <span class="pw-ap">@row.AllPlayWins-@row.AllPlayLosses<small>@((row.AllPlayPct).ToString(".000"))</small></span>
+                    <span class="pw-luck @(row.Luck >= 0.5 ? "good-txt" : row.Luck <= -0.5 ? "bad-txt" : "")">@(row.Luck >= 0 ? "+" : "")@F1(row.Luck)</span>
+                </a>
+            }
+        </section>
+        <div class="card explain small">
+            <p><b>All-play</b> is the record you'd have if you played <i>every</i> team every week. It's the best test of how good a team really is.</p>
+            <p><b>Luck</b> is real wins minus all-play wins. A big plus means the schedule helped you. A big minus means you deserved better.</p>
+            <p><b>Power rank</b> mixes all-play (70%) with how hot the team is over the last 3 weeks (30%).</p>
+        </div>
+        break;
+
+    case "Scores":
+        @foreach (var id in S.ThisWeek.Select(x => x.MatchupId).Where(x => x is not null).Distinct().OrderBy(x => x))
+        {
+            var m = S.BuildMatchup(id!.Value);
+            if (m is null) continue;
+            <a class="card score-card @(S.IsMine(m.A.Roster) ? "me" : "")" href="matchup/@m.MatchupId">
+                <div class="sc-row @(m.A.Points >= (m.B?.Points ?? 0) ? "lead" : "")">
+                    <Avatar Url="@m.A.Avatar" Name="@m.A.Name" Size="28" /><span class="sc-name">@m.A.Name</span>
+                    <span class="sc-proj">@F1(m.A.Projected)</span><b>@F2(m.A.Points)</b>
+                </div>
+                <div class="sc-row @((m.B?.Points ?? 0) > m.A.Points ? "lead" : "")">
+                    <Avatar Url="@m.B?.Avatar" Name="@m.B?.Name" Size="28" /><span class="sc-name">@m.B?.Name</span>
+                    <span class="sc-proj">@F1(m.B?.Projected ?? 0)</span><b>@F2(m.B?.Points ?? 0)</b>
+                </div>
+                <div class="sc-bar"><span style="width:@((m.WinA * 100).ToString("0"))%"></span></div>
+            </a>
+        }
+        <p class="muted small center">Small number = projected final. Bar = win chance.</p>
+        break;
+
+    case "Moves":
+        <section class="card list">
+            @if (S.Moves.Count == 0) { <p class="muted">No moves in the last two weeks.</p> }
+            @foreach (var t in S.Moves.Take(40))
+            {
+                <div class="move">
+                    <div class="move-h">
+                        <span class="tag @(t.Type == "trade" ? "gold" : "")">@Kind(t)</span>
+                        <span class="muted small">@DateTimeOffset.FromUnixTimeMilliseconds(t.Created).ToLocalTime().ToString("ddd M/d h:mm tt")</span>
+                    </div>
+                    @foreach (var rid in t.RosterIds ?? [])
+                    {
+                        var adds = t.Adds?.Where(kv => kv.Value == rid).Select(kv => kv.Key).ToList() ?? [];
+                        var drops = t.Drops?.Where(kv => kv.Value == rid).Select(kv => kv.Key).ToList() ?? [];
+                        <div class="move-team">
+                            <b>@S.TeamName(S.RosterById(rid))</b>
+                            @foreach (var p in adds) { <a class="mv add" href="player/@p">+ @S.Name(p) <small>@S.Pos(p)</small></a> }
+                            @foreach (var p in drops) { <a class="mv drop" href="player/@p">– @S.Name(p) <small>@S.Pos(p)</small></a> }
+                            @if (t.WaiverBid is { } bid && adds.Count > 0) { <span class="muted small">$@bid FAAB</span> }
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+        break;
+}
+
+<section class="card switch">
+    <div class="card-h"><span>Whose app is this?</span></div>
+    <p class="muted small">Pick your team. Your friends in the league can use this app too.</p>
+    <select @onchange="Pick" value="@S.MyOwnerId">
+        @foreach (var r in S.Rosters.OrderBy(S.TeamName))
+        {
+            <option value="@r.OwnerId">@S.TeamName(r)</option>
+        }
+    </select>
+</section>
+
+@code {
+    string tab = "Standings";
+
+    async Task Pick(ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() is { Length: > 0 } id) await S.SetMyTeamAsync(id);
+    }
+
+    string Move(StandingRow r)
+    {
+        var d = r.Rank - r.PowerRank;
+        return d > 0 ? $"▲{d} vs standings" : d < 0 ? $"▼{-d} vs standings" : "same as standings";
+    }
+
+    static string Kind(Transaction t) => t.Type switch { "trade" => "TRADE", "waiver" => "WAIVER", "free_agent" => "FREE AGENT", var x => x?.ToUpperInvariant() ?? "" };
+}

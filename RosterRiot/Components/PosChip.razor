@@ -1,0 +1,7 @@
+<span class="pos pos-@Css">@Label</span>
+
+@code {
+    [Parameter] public string? Pos { get; set; }
+    string Label => LeagueService.SlotLabel(Pos ?? "");
+    string Css => (Pos ?? "").ToLowerInvariant() switch { "flex" or "super_flex" or "rec_flex" or "wrrb_flex" => "flex", var p => p };
+}

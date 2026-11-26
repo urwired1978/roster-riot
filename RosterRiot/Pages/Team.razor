@@ -1,0 +1,141 @@
+@page "/team"
+@page "/team/{RosterId:int}"
+@inherits LivePage
+
+<PageTitle>My Team · Roster Riot</PageTitle>
+
+@{
+    var r = RosterId is { } id ? S.RosterById(id) : S.MyRoster;
+    var mine = S.IsMine(r);
+    var table = S.Standings();
+    var row = table.FirstOrDefault(x => x.Roster.RosterId == r?.RosterId);
+}
+
+@if (r is null || row is null)
+{
+    <div class="card empty">Team not found.</div>
+}
+else
+{
+    var slots = S.StarterSlots;
+    var starters = r.Starters ?? [];
+    var bench = (r.Players ?? []).Where(p => !starters.Contains(p) && !(r.Reserve?.Contains(p) ?? false))
+        .OrderBy(p => Order(S.Pos(p))).ThenByDescending(S.ProjOf).ToList();
+    var adv = LineupCoach.Advise(S, r);
+
+    <section class="team-head">
+        <Avatar Url="@row.Avatar" Name="@row.Name" Size="64" />
+        <div class="th-main">
+            <h1>@row.Name</h1>
+            <div class="th-sub">@(S.User(r)?.DisplayName)</div>
+            <div class="th-stats">
+                <span><b>@row.Wins-@row.Losses</b> record</span>
+                <span><b>@Ordinal(row.Rank)</b> place</span>
+                <span><b>@F1(row.PointsFor)</b> pts</span>
+                @if (row.Streak is { } st) { <span><b class="@(st.EndsWith("W") ? "good-txt" : "bad-txt")">@st</b> streak</span> }
+            </div>
+        </div>
+    </section>
+
+    @if (row.RecordString is { Length: > 0 } rec)
+    {
+        <div class="form-strip">
+            @foreach (var c in rec) { <span class="fs @(c == 'W' ? "w" : c == 'L' ? "l" : "t")">@c</span> }
+        </div>
+    }
+
+    <section class="card coach">
+        <div class="card-h">
+            <span>🧠 Lineup Coach</span>
+            @if (adv.IsOptimal) { <span class="tag good">LOOKS OPTIMAL</span> }
+            else { <span class="tag gold">+@F1(adv.Gain) PTS AVAILABLE</span> }
+        </div>
+        @if (adv.IsOptimal && adv.Alerts.Count == 0)
+        {
+            <p class="muted">Every starter is the best projected option still unlocked. Nice work.</p>
+        }
+        @foreach (var sw in adv.Swaps)
+        {
+            <div class="swap">
+                <span class="swap-in"><span class="arrow up">▲</span> Start <b>@S.Name(sw.In)</b> <small>@F1(S.ProjOf(sw.In))</small></span>
+                @if (sw.Out is { } o) { <span class="swap-out"><span class="arrow down">▼</span> Bench <b>@S.Name(o)</b> <small>@F1(S.ProjOf(o))</small></span> }
+                <span class="swap-gain">+@F1(sw.Gain)</span>
+            </div>
+        }
+        @foreach (var al in adv.Alerts)
+        {
+            <div class="alert @(al.Level == AlertLevel.Bad ? "bad" : "warn")">@(al.Level == AlertLevel.Bad ? "⛔" : "⚠️") @al.Text</div>
+        }
+        @if (mine && !adv.IsOptimal) { <p class="muted small">Make the changes in the Sleeper app. This app can look but can't touch.</p> }
+        <div class="coach-foot muted small">Projected starters: <b class="txt">@F1(adv.CurrentProj)</b> · Best possible: <b class="txt">@F1(adv.OptimalProj)</b></div>
+    </section>
+
+    <h2 class="sec">Starters</h2>
+    <section class="card list">
+        @for (var i = 0; i < slots.Count; i++)
+        {
+            var pid = i < starters.Count ? starters[i] : "0";
+            if (pid == "0") { <div class="prow empty"><PosChip Pos="@slots[i]" /><span class="muted">Empty slot</span></div> }
+            else { <PlayerRow Pid="@pid" Slot="@slots[i]" /> }
+        }
+    </section>
+
+    <h2 class="sec">Bench</h2>
+    <section class="card list">
+        @foreach (var pid in bench) { <PlayerRow Pid="@pid" Slot="BN" Dim="true" /> }
+    </section>
+
+    @if (r.Reserve is { Count: > 0 } ir)
+    {
+        <h2 class="sec">Injured reserve</h2>
+        <section class="card list">
+            @foreach (var pid in ir) { <PlayerRow Pid="@pid" Slot="IR" Dim="true" /> }
+        </section>
+    }
+
+    <h2 class="sec">Points every week</h2>
+    <section class="card">
+        <WeekBars Values="@row.Weekly.Select(x => (double?)x).ToList()" Average="@(table.SelectMany(t => t.Weekly).DefaultIfEmpty(0).Average())" />
+        <div class="muted small center">Dashed line = league average score</div>
+    </section>
+
+    <h2 class="sec">Position strength</h2>
+    <section class="card">
+        @foreach (var (pos, rank, pts) in Strength(r))
+        {
+            <div class="str-row">
+                <PosChip Pos="@pos" />
+                <div class="str-bar"><span class="@(rank <= 4 ? "good" : rank >= 9 ? "bad" : "")" style="width:@((13 - rank) / 12.0 * 100)%"></span></div>
+                <span class="str-rank">@Ordinal(rank)</span>
+            </div>
+        }
+        <div class="muted small center">Rank vs. the other 11 teams by this week's projections for the starters at each position</div>
+    </section>
+
+    @if (!mine)
+    {
+        <a class="btn" href="team">← Back to my team</a>
+    }
+    <div class="muted small center">FAAB left: $@S.FaabLeft(r) · Waiver priority @r.Setting("waiver_position")</div>
+}
+
+@code {
+    [Parameter] public int? RosterId { get; set; }
+
+    static int Order(string pos) => pos switch { "QB" => 0, "RB" => 1, "WR" => 2, "TE" => 3, "K" => 4, _ => 5 };
+    static string Ordinal(int n) => n + (n % 100 is 11 or 12 or 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" });
+
+    /// <summary>For each position, sum the top-N projections (N = starting spots) on every team and rank this team.</summary>
+    IEnumerable<(string Pos, int Rank, double Pts)> Strength(Roster me)
+    {
+        var need = new Dictionary<string, int> { ["QB"] = 1, ["RB"] = 2, ["WR"] = 2, ["TE"] = 1, ["K"] = 1 };
+        foreach (var slot in S.StarterSlots.Where(x => need.ContainsKey(x)).GroupBy(x => x)) need[slot.Key] = slot.Count();
+        foreach (var (pos, n) in need)
+        {
+            double Sum(Roster t) => (t.Players ?? []).Where(p => S.Pos(p) == pos).Select(S.ProjOf).OrderByDescending(x => x).Take(n).Sum();
+            var mine = Sum(me);
+            var rank = 1 + S.Rosters.Count(t => t.RosterId != me.RosterId && Sum(t) > mine);
+            yield return (pos, rank, mine);
+        }
+    }
+}

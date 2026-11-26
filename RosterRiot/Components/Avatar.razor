@@ -1,0 +1,13 @@
+<span class="av" style="width:@(Size)px;height:@(Size)px">
+    <span class="av-init">@(Name?.FirstOrDefault(char.IsLetterOrDigit).ToString().ToUpperInvariant())</span>
+    @if (Url is { Length: > 0 })
+    {
+        <img src="@Url" alt="" loading="lazy" onerror="this.remove()" />
+    }
+</span>
+
+@code {
+    [Parameter] public string? Url { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public int Size { get; set; } = 36;
+}

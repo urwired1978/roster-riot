@@ -1,0 +1,18 @@
+{
+  "name": "Roster Riot",
+  "short_name": "Roster Riot",
+  "description": "Your team. Every move. A live Sleeper fantasy football tracker.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#06142a",
+  "theme_color": "#06142a",
+  "categories": ["sports"],
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

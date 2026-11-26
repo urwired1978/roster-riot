@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "roster-riot",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "RosterRiot", "--launch-profile", "http", "--urls", "http://localhost:5084"],
+      "port": 5084
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+@* Bar chart of fantasy points by week. A null value is a week he didn't play (bye or out). *@
+@{
+    var vals = Values ?? [];
+    var max = Math.Max(vals.Where(v => v is not null).Select(v => v!.Value).DefaultIfEmpty(0).Max(), Average ?? 0) * 1.12;
+    if (max <= 0) max = 1;
+    var n = Math.Max(vals.Count, 1);
+    const double W = 340, H = 130, Top = 16, Bottom = 20;
+    var bw = W / n;
+    var plotH = H - Top - Bottom;
+}
+<svg class="bars" viewBox="0 0 @W @H" preserveAspectRatio="none" role="img" aria-label="Points by week">
+    @for (var i = 0; i < vals.Count; i++)
+    {
+        var v = vals[i];
+        var x = i * bw + bw * 0.14;
+        var w = bw * 0.72;
+        var label = Labels is not null && i < Labels.Count ? Labels[i] : (i + 1).ToString();
+        if (v is { } val)
+        {
+            var h = val / max * plotH;
+            var cls = Average is { } a ? (val >= a ? "hi" : "lo") : "hi";
+            <rect x="@x.ToString("0.##")" y="@((Top + plotH - h).ToString("0.##"))" width="@w.ToString("0.##")" height="@Math.Max(h, 1.5).ToString("0.##")" rx="3" class="bar @cls" />
+            @if (n <= 18)
+            {
+                <g><text x="@((x + w / 2).ToString("0.##"))" y="@((Top + plotH - h - 4).ToString("0.##"))" class="bar-val">@val.ToString("0")</text></g>
+            }
+        }
+        else
+        {
+            <g><text x="@((x + w / 2).ToString("0.##"))" y="@((Top + plotH - 4).ToString("0.##"))" class="bar-val muted">–</text></g>
+        }
+        <g><text x="@((x + w / 2).ToString("0.##"))" y="@(H - 5)" class="bar-lbl">@label</text></g>
+    }
+    @if (Average is { } avg && avg > 0)
+    {
+        var y = Top + plotH - avg / max * plotH;
+        <line x1="0" x2="@W" y1="@y.ToString("0.##")" y2="@y.ToString("0.##")" class="bar-avg" />
+    }
+</svg>
+
+@code {
+    [Parameter] public List<double?>? Values { get; set; }
+    [Parameter] public List<string>? Labels { get; set; }
+    [Parameter] public double? Average { get; set; }
+}

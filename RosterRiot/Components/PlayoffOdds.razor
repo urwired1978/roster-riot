@@ -1,0 +1,38 @@
+@inherits LivePage
+
+<h2 class="sec">Playoff chances</h2>
+<section class="card list odds">
+    @foreach (var row in Table.OrderByDescending(r => Odds.GetValueOrDefault(r.Roster.RosterId)?.MakePlayoffs ?? 0).ThenBy(r => r.Rank))
+    {
+        var o = Odds.GetValueOrDefault(row.Roster.RosterId);
+        var pct = o?.MakePlayoffs ?? 0;
+        <div class="odds-row @(S.IsMine(row.Roster) ? "me" : "")">
+            <Avatar Url="@row.Avatar" Name="@row.Name" Size="24" />
+            <span class="odds-name">@row.Name</span>
+            <span class="odds-bar"><span class="@(pct >= 0.75 ? "good" : pct <= 0.25 ? "bad" : "mid")" style="width:@((pct * 100).ToString("0.#"))%"></span></span>
+            <span class="odds-pct">@Pct(pct)</span>
+        </div>
+    }
+    <p class="muted small">We played the rest of the season 2,000 times using each team's real schedule and how they've scored so far. Avg seed for you: <b class="txt">@((Odds.GetValueOrDefault(S.MyRoster?.RosterId ?? 0)?.AvgSeed ?? 0).ToString("0.0"))</b>.</p>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public List<StandingRow> Table { get; set; } = [];
+    Dictionary<int, PlayoffChance> Odds = [];
+    DateTimeOffset? computedFor;
+
+    protected override void OnParametersSet()
+    {
+        if (computedFor == S.UpdatedAt && Odds.Count > 0) return;
+        Odds = S.PlayoffOdds();
+        computedFor = S.UpdatedAt;
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (computedFor != S.UpdatedAt) { Odds = S.PlayoffOdds(); computedFor = S.UpdatedAt; }
+        return true;
+    }
+
+    static string Pct(double p) => p >= 0.995 ? ">99%" : p <= 0.005 ? "<1%" : $"{p * 100:0}%";
+}

@@ -1,0 +1,17 @@
+@* A donut showing win chance. *@
+@{
+    var r = 42.0;
+    var c = 2 * Math.PI * r;
+    var dash = c * Math.Clamp(Pct, 0, 1);
+}
+<svg class="ring" viewBox="0 0 100 100" width="@Size" height="@Size">
+    <circle cx="50" cy="50" r="@r" class="ring-bg" />
+    <circle cx="50" cy="50" r="@r" class="ring-fg @(Pct >= 0.5 ? "good" : "bad")" stroke-dasharray="@($"{dash:0.##} {c:0.##}")" transform="rotate(-90 50 50)" />
+    <text x="50" y="50" class="ring-num">@Math.Round(Pct * 100)%</text>
+    <text x="50" y="67" class="ring-lbl">WIN</text>
+</svg>
+
+@code {
+    [Parameter] public double Pct { get; set; }
+    [Parameter] public int Size { get; set; } = 84;
+}
