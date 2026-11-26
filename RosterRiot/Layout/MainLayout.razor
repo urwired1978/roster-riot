@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @implements IDisposable
 @inject LeagueService S
 @inject NavigationManager Nav
@@ -57,6 +57,9 @@
         </NavLink>
         <NavLink class="tab" href="waivers">
             <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /><circle cx="12" cy="12" r="9" /></svg><span>Pickups</span>
+        </NavLink>
+        <NavLink class="tab" href="trades">
+            <svg viewBox="0 0 24 24"><path d="M4 8h15l-4-4M20 16H5l4 4" /></svg><span>Trades</span>
         </NavLink>
         <NavLink class="tab" href="nfl">
             <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9.5" ry="5.5" transform="rotate(-35 12 12)" /><path d="M9.5 14.5l5-5M10.5 11.5l2 2M12.5 9.5l2 2" /></svg><span>NFL</span>

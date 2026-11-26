@@ -70,6 +70,15 @@ else
         <div class="coach-foot muted small">Projected starters: <b class="txt">@F1(adv.CurrentProj)</b> · Best possible: <b class="txt">@F1(adv.OptimalProj)</b></div>
     </section>
 
+    @if (mine)
+    {
+        <a class="card coach-mini" href="trades">
+            <span class="coach-ico">🤝</span>
+            <span><b>Trade advisor</b><br /><span class="muted small">Deadline: @TradeDeadline() · ideas and a trade checker</span></span>
+            <span class="chev">›</span>
+        </a>
+    }
+
     <h2 class="sec">Starters</h2>
     <section class="card list">
         @for (var i = 0; i < slots.Count; i++)
@@ -121,6 +130,12 @@ else
 
 @code {
     [Parameter] public int? RosterId { get; set; }
+
+    string TradeDeadline()
+    {
+        var d = S.League?.Setting("trade_deadline") ?? 0;
+        return d <= 0 ? "none" : (d - S.Week) switch { < 0 => "passed", 0 => "this week", 1 => "next week", var g => $"in {g} weeks" };
+    }
 
     static int Order(string pos) => pos switch { "QB" => 0, "RB" => 1, "WR" => 2, "TE" => 3, "K" => 4, _ => 5 };
     static string Ordinal(int n) => n + (n % 100 is 11 or 12 or 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" });

@@ -1,0 +1,299 @@
+@page "/trades"
+@inherits LivePage
+@inject TradeService T
+
+<PageTitle>Trades · Roster Riot</PageTitle>
+
+@{
+    var me = S.MyRoster;
+    var gap = T.Deadline - S.Week;
+}
+
+<section class="card deadline @(gap < 0 ? "past" : gap <= 1 ? "soon" : "")">
+    <span class="dl-ico">⏰</span>
+    <div class="dl-main">
+        <div class="dl-big">Trade deadline: @T.DeadlineText</div>
+        <div class="muted small">
+            @if (T.Deadline > 0) { <span>Week @T.Deadline. </span> }
+            @if (gap < 0) { <span>Trades are closed for this season, but you can still play with the checker.</span> }
+            else if (S.PlaysMedian) { <span>Every week counts twice here (vs. your opponent and vs. the league median), so a stronger lineup is worth double.</span> }
+        </div>
+    </div>
+</section>
+
+<div class="seg">
+    <button class="@(T.Tab == "ideas" ? "on" : "")" @onclick='() => T.Tab = "ideas"'>Ideas</button>
+    <button class="@(T.Tab == "check" ? "on" : "")" @onclick='() => T.Tab = "check"'>Checker</button>
+    <button class="@(T.Tab == "values" ? "on" : "")" @onclick='() => T.Tab = "values"'>Values</button>
+</div>
+
+@if (T.Error is { } err)
+{
+    <div class="card empty">@err</div>
+}
+else if (!T.Ready || busy || me is null)
+{
+    <div class="card empty">@(T.Ready ? "Crunching every trade in the league…" : "Loading projections for every week through the playoffs…")</div>
+}
+else if (T.Weeks.Count == 0)
+{
+    <div class="card empty">The season's over, so there's nothing left to trade for.</div>
+}
+else
+{
+    var weeksTxt = WeeksText();
+    switch (T.Tab)
+    {
+        case "ideas":
+            var ranks = T.Ranks(me);
+            var ideas = T.Ideas();
+            <h2 class="sec">Your lineup vs. the league</h2>
+            <section class="card ranks">
+                @foreach (var rk in ranks.Values)
+                {
+                    <div class="rk @(rk.Rank <= 4 ? "good" : rk.Rank >= 9 ? "bad" : "")">
+                        <PosChip Pos="@rk.Pos" />
+                        <b>@TradeService.Ordinal(rk.Rank)</b>
+                    </div>
+                }
+            </section>
+            <p class="muted small center">Rank of 12 by rest-of-season points (@weeksTxt) from your top QB, 3 RBs, 3 WRs, TE and K.</p>
+
+            <h2 class="sec">Trade ideas</h2>
+            @if (!ideas.Any(i => !i.LongShot))
+            {
+                <div class="card empty">No trade helps both teams right now. Try the long shots below or build your own in the Checker.</div>
+            }
+            @foreach (var idea in ideas.Where(i => !i.LongShot)) { @IdeaCard(idea) }
+            @if (ideas.Any(i => i.LongShot))
+            {
+                <h2 class="sec">Long shots</h2>
+                <p class="muted small">These help you a lot, but the other team loses a little, so you'd have to talk them into it.</p>
+                @foreach (var idea in ideas.Where(i => i.LongShot)) { @IdeaCard(idea) }
+            }
+            <p class="muted small center">+ numbers are points added to each team's best starting lineup over @weeksTxt. Value = rest-of-season points above the best free agents at his position.</p>
+            break;
+
+        case "check":
+            var partner = Partner();
+            <section class="card switch">
+                <div class="card-h"><span>🤝 Trade checker</span></div>
+                <div class="muted small">Pick who you'd give and who you'd get. Tap a photo to open the player card.</div>
+                <select value="@partner?.RosterId" @onchange="PickPartner">
+                    @foreach (var r in S.Rosters.Where(r => !S.IsMine(r)).OrderBy(S.TeamName))
+                    {
+                        <option value="@r.RosterId">@S.TeamName(r)</option>
+                    }
+                </select>
+            </section>
+            @if (partner is not null)
+            {
+                var give = T.Give.Where(p => me.Players?.Contains(p) == true).ToList();
+                var get = T.Get.Where(p => partner.Players?.Contains(p) == true).ToList();
+                var check = give.Count > 0 && get.Count > 0 ? T.Evaluate(me, give, partner, get) : null;
+                var verdict = check is null ? null : T.Judge(check);
+
+                <h2 class="sec">You give</h2>
+                <section class="card list">
+                    @foreach (var p in Sorted(T.Pool(me))) { <TradePlayer Pid="@p" Selected="@T.Give.Contains(p)" OnToggle="ToggleGive" /> }
+                </section>
+                <h2 class="sec">You get from @S.TeamName(partner)</h2>
+                <section class="card list">
+                    @foreach (var p in Sorted(T.Pool(partner))) { <TradePlayer Pid="@p" Selected="@T.Get.Contains(p)" OnToggle="ToggleGet" /> }
+                </section>
+
+                @if (check is not null && verdict is not null)
+                {
+                    var n = check.Weeks.Length;
+                    <section class="card verdict v-@verdict.Kind.ToString().ToLowerInvariant()" id="verdict">
+                        <div class="v-head">
+                            <span class="v-call">@verdict.Kind.ToString().ToUpperInvariant()</span>
+                            <span class="muted small">for @S.TeamName(me)</span>
+                        </div>
+                        <p class="v-why">@verdict.Reason</p>
+                        <div class="v-grid">
+                            <span></span><span class="muted small">Rest of season</span><span class="muted small">Playoffs</span>
+                            <span class="v-team">You</span><b class="@Cls(check.AGain)">@Signed(check.AGain)</b><b class="@Cls(check.APlayoffGain)">@Signed(check.APlayoffGain)</b>
+                            <span class="v-team">@S.TeamName(partner)</span><b class="@Cls(check.BGain)">@Signed(check.BGain)</b><b class="@Cls(check.BPlayoffGain)">@Signed(check.BPlayoffGain)</b>
+                        </div>
+                        <div class="v-weeks">
+                            @for (var i = 0; i < n; i++)
+                            {
+                                <div class="v-wk @(check.Weeks[i] >= T.PlayoffStart ? "po" : "")">
+                                    <span class="muted">Wk @check.Weeks[i]</span>
+                                    <b class="@Cls(check.AWeekGain(i))">@Signed(check.AWeekGain(i))</b>
+                                </div>
+                            }
+                        </div>
+                        <div class="v-value">
+                            <span>Value you get <b>@check.ValueIn.ToString("0")</b></span>
+                            <span>you give <b>@check.ValueOut.ToString("0")</b></span>
+                            <span class="tag @(Math.Abs(check.ValueIn - check.ValueOut) <= Math.Max(8, 0.15 * Math.Max(check.ValueIn, check.ValueOut)) ? "good" : "")">@Balance(check)</span>
+                        </div>
+                        @if (Drops(check) is { } d) { <div class="muted small">@d</div> }
+                        <div class="muted small">Points your best starting lineup gains or loses (@WeeksText()). Playoffs = weeks @T.PlayoffStart–@T.LastWeek.</div>
+                    </section>
+                    <a class="v-bar v-@verdict.Kind.ToString().ToLowerInvariant()" href="trades#verdict" @onclick:preventDefault="true" @onclick="ScrollToVerdict">
+                        <b>@verdict.Kind.ToString().ToUpperInvariant()</b>
+                        <span>You @Signed(check.AGain) · Them @Signed(check.BGain)</span>
+                        <span class="chev">›</span>
+                    </a>
+                }
+                else
+                {
+                    <div class="card empty">Pick at least one player on each side to get a verdict.</div>
+                }
+            }
+            break;
+
+        default:
+            <h2 class="sec">Your players' trade value</h2>
+            <section class="card list">
+                @foreach (var p in Sorted(T.Pool(me)))
+                {
+                    var d = T.Data(p);
+                    <TradePlayer Pid="@p" Note="@($"playoffs {d.PlayoffPts:0}")" />
+                }
+            </section>
+
+            @if (T.Targets() is { Count: > 0 } targets)
+            {
+                <h2 class="sec">Who'd help you most</h2>
+                <p class="muted small">Points a week each player would add to your best lineup (before you give anyone up).</p>
+                <section class="card list">
+                    @foreach (var t in targets)
+                    {
+                        <TradePlayer Pid="@t.Pid" Note="@($"+{t.Gain / T.Weeks.Count:0.0}/wk · {S.TeamName(t.Owner)}")" />
+                    }
+                </section>
+            }
+
+            <section class="card explain">
+                <div class="card-h"><span>How the numbers work</span></div>
+                <p>For each week left (@weeksTxt), a player's points guess is <b>50%</b> Sleeper's projection for that week, <b>30%</b> his season average and <b>20%</b> his last 3 games, all in this league's scoring. A bye or a week he's projected to miss counts as 0.</p>
+                <p><b>ROS pts</b> (the big number) adds those weeks up. <b>Value</b> is ROS points minus what the best free agents at his position would score (QB @T.Baseline("QB").ToString("0"), RB @T.Baseline("RB").ToString("0"), WR @T.Baseline("WR").ToString("0"), TE @T.Baseline("TE").ToString("0")), because nobody trades for a guy you could pick up for free.</p>
+                <p>A trade is judged by your <b>best starting lineup</b> each week, before and after. Bench points don't count. If a trade leaves a team with a hole, we assume they'd pick up a free agent there.</p>
+            </section>
+            break;
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "p")] public string? FocusPid { get; set; }
+    [Inject] IJSRuntime Js { get; set; } = default!;
+    bool busy = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await S.EnsureLoadedAsync();
+        await T.EnsureLoadedAsync();
+        await Task.Delay(20);   // let "Crunching…" show before the heavy part
+        if (T.Ready) T.Ideas();
+        busy = false;
+        Focus();
+    }
+
+    protected override void OnParametersSet() { if (!busy) Focus(); }
+
+    /// <summary>Coming from a player card ("Trade for him"): load him into the checker.</summary>
+    void Focus()
+    {
+        if (FocusPid is not { } pid) return;
+        var owner = S.OwnerOf(pid);
+        if (owner is not null)
+        {
+            if (S.IsMine(owner)) T.Give.Add(pid);
+            else
+            {
+                if (T.PartnerId != owner.RosterId) T.Get.Clear();
+                T.PartnerId = owner.RosterId;
+                T.Get.Add(pid);
+            }
+            T.Tab = "check";
+        }
+        Nav.NavigateTo("trades", replace: true);
+    }
+
+    Roster? Partner() =>
+        (T.PartnerId is { } id ? S.RosterById(id) : null)
+        ?? T.Ideas().FirstOrDefault()?.Partner
+        ?? S.Rosters.FirstOrDefault(r => !S.IsMine(r));
+
+    void PickPartner(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id) || id == T.PartnerId) return;
+        T.PartnerId = id;
+        T.Get.Clear();
+    }
+
+    void ToggleGive(string pid) { if (!T.Give.Remove(pid)) T.Give.Add(pid); }
+    void ToggleGet(string pid)
+    {
+        if (T.PartnerId is null && Partner() is { } p) T.PartnerId = p.RosterId;
+        if (!T.Get.Remove(pid)) T.Get.Add(pid);
+    }
+
+    void OpenInChecker(TradeIdea idea)
+    {
+        T.PartnerId = idea.Partner.RosterId;
+        T.Give.Clear();
+        T.Get.Clear();
+        foreach (var p in idea.Give) T.Give.Add(p);
+        foreach (var p in idea.Get) T.Get.Add(p);
+        T.Tab = "check";
+    }
+
+    async Task ScrollToVerdict()
+    {
+        try { await Js.InvokeVoidAsync("eval", "document.getElementById('verdict')?.scrollIntoView({behavior:'smooth',block:'center'})"); } catch { }
+    }
+
+    IEnumerable<string> Sorted(IEnumerable<string> pids) => pids.OrderByDescending(T.Value).ThenByDescending(T.Ros);
+
+    string WeeksText() => T.Weeks.Count switch
+    {
+        0 => "no weeks left",
+        1 => $"week {T.Weeks[0]}",
+        _ => $"weeks {T.Weeks[0]}–{T.Weeks[^1]}",
+    };
+
+    string? Drops(TradeCheck c)
+    {
+        var bits = new List<string>();
+        if (c.ADrops.Count > 0) bits.Add($"You'd drop {string.Join(" and ", c.ADrops.Select(S.Short))} to make room.");
+        if (c.BDrops.Count > 0) bits.Add($"They'd drop {string.Join(" and ", c.BDrops.Select(S.Short))}.");
+        return bits.Count > 0 ? string.Join(" ", bits) : null;
+    }
+
+    RenderFragment IdeaCard(TradeIdea idea) => @<text>
+        <section class="card idea @(idea.LongShot ? "long" : "")">
+            <div class="idea-h">
+                <Avatar Url="@S.AvatarUrl(idea.Partner)" Name="@S.TeamName(idea.Partner)" Size="28" />
+                <span class="idea-team">with <b>@S.TeamName(idea.Partner)</b></span>
+                <span class="tag gold">+@F1(idea.Check.AGain / Math.Max(1, idea.Check.Weeks.Length))/WK</span>
+            </div>
+            <div class="idea-lbl good-txt">You get</div>
+            <div class="list">@foreach (var p in idea.Get) { <TradePlayer Pid="@p" /> }</div>
+            <div class="idea-lbl bad-txt">You give</div>
+            <div class="list">@foreach (var q in idea.Give) { <TradePlayer Pid="@q" /> }</div>
+            <p class="idea-why">@idea.Why</p>
+            <div class="idea-nums">
+                <span>You <b class="good-txt">@Signed(idea.Check.AGain)</b></span>
+                <span>Them <b class="@Cls(idea.Check.BGain)">@Signed(idea.Check.BGain)</b></span>
+                <span>Value <b>@idea.Check.ValueIn.ToString("0")</b> for <b>@idea.Check.ValueOut.ToString("0")</b></span>
+            </div>
+            @if (Drops(idea.Check) is { } drops) { <div class="muted small">@drops</div> }
+            <button class="btn" @onclick="() => OpenInChecker(idea)">Open in the trade checker</button>
+        </section>
+    </text>;
+
+    static string Signed(double v) => Math.Abs(v) < 0.05 ? "0.0" : v.ToString("+0.0;-0.0");
+    static string Cls(double v) => v >= 0.05 ? "good-txt" : v <= -0.05 ? "bad-txt" : "muted";
+
+    static string Balance(TradeCheck c)
+    {
+        var diff = c.ValueIn - c.ValueOut;
+        var even = Math.Max(8, 0.15 * Math.Max(c.ValueIn, c.ValueOut));
+        return Math.Abs(diff) <= even ? "EVEN VALUE" : diff > 0 ? "YOU GET MORE" : "YOU PAY MORE";
+    }
+}

@@ -28,6 +28,10 @@
             @if (owner is null) { <span class="tag good">FREE AGENT</span> }
             else if (S.IsMine(owner)) { <span class="tag gold">ON YOUR TEAM</span> }
             else { <a href="team/@owner.RosterId" class="tag">@S.TeamName(owner)</a> }
+            @if (owner is not null && S.Pos(Pid) is "QB" or "RB" or "WR" or "TE" or "K")
+            {
+                <a href="trades?p=@Pid" class="tag gold">🤝 @(S.IsMine(owner) ? "Shop him in a trade" : "Trade for him")</a>
+            }
             @if (trend > 0) { <span class="tag hot">🔥 +@trend.ToString("N0") adds today</span> }
         </div>
     </div>
