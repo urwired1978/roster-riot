@@ -8,22 +8,24 @@ league can pick their own team on the League tab.
 
 ## What it does
 
+Five tabs at the bottom, like a native iPhone app:
+
 | Tab | What you get |
 |---|---|
-| **Matchup** | Live score vs. this week's opponent, win chance, projected finals, slot-by-slot lineups, the "vs. league median" race, and every other matchup in the league |
-| **My Team** | Lineup Coach (best lineup from projections, injury and bye alerts), starters and bench with projections and averages, W/L streak, points every week, position strength vs. the league |
-| **League** | Standings with the playoff line, **playoff chances** (2,000 simulated seasons), power rankings with all-play record and luck, all scores, recent trades and pickups |
+| **Matchup** | Live score vs. this week's opponent, win chance, projected finals, slot-by-slot lineups, the "vs. league median" race, every other matchup in the league, and a link to the **NFL scoreboard** (every game this week, live, with your players in each one) |
+| **My Team** | Lineup Coach (best lineup from projections, injury and bye alerts), starters and bench with projections and averages, W/L streak, points every week, position strength vs. the league, plus shortcuts to the Trade advisor and Player Buzz |
+| **Moves** | Two parts, switched at the top. **Pickups**: FAAB left, players trending across Sleeper, best free agents still to play, and how much each would beat your weakest starter. **Trades**: deadline countdown, trade ideas that help both teams, a trade checker with an Accept / Fair / Decline call, and every player's rest-of-season trade value |
 | **Buzz** | News and social chatter about your players (and this week's opponent's starters) from the last 7 days, with off-field and injury heads-ups. See [Buzz](#buzz) |
-| **Pickups** | FAAB left, players trending across Sleeper, best free agents still to play, and how much each would beat your weakest starter |
-| **Trades** | Trade deadline countdown, trade ideas that help both teams, a trade checker with an Accept / Fair / Decline call, and every player's rest-of-season trade value |
-| **NFL** | Every game this week with live scores, down and distance, and which of your (and your opponent's) players are in it |
-| **Player card** | Tap any player: this week, buzz from the last 7 days, a weekly points chart in league scoring, the game log, and who owns him |
+| **League** | Standings with the playoff line, **playoff chances** (2,000 simulated seasons), power rankings with all-play record and luck, all scores, and recent trades and pickups (Activity) |
+
+Tap any player anywhere for his **player card**: this week, buzz from the last 7 days, a weekly points chart in
+league scoring, the game log, who owns him, and a button to trade for him. Pull down on any screen to refresh.
 
 Scores refresh by themselves every 30 seconds while games are live.
 
 ## Trade advisor
 
-Open it from the **Trades** tab, the "Trade advisor" card on My Team, or "Trade for him" / "Shop him in a
+Open it from **Moves > Trades**, the "Trade advisor" card on My Team, or "Trade for him" / "Shop him in a
 trade" on any player card. The banner shows the league's trade deadline (`trade_deadline`, week 13 here).
 
 - **Ideas**: your rank at each position, then 1-for-1, 2-for-1 and 2-for-2 trades where *both* teams' best
@@ -93,8 +95,8 @@ Where it shows up:
 
 - **Buzz tab**: a "Heads up" list, then everything newest first. You can filter by category, "News only",
   or switch to your opponent's starters.
-- **Badges** next to player names on Matchup, My Team and the player card. 📣 means off-field or legal buzz
-  and 🩹 means injury or practice news, both from the last 3 days. The Buzz tab shows a pink count when one of
+- **Badges** next to player names on Matchup, My Team and the player card. A pink megaphone means off-field or
+  legal buzz and an amber cross means injury or practice news, both from the last 3 days. The Buzz tab shows a pink count when one of
   your own players has off-field buzz.
 - **Player card**: a Buzz section with that player's items.
 - **Matchup / My Team**: a "Player Buzz" shortcut card when there's anything to know.
