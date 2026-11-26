@@ -4,13 +4,15 @@
 
 <PageTitle>Trades · Roster Riot</PageTitle>
 
+<MovesSwitch Active="trades" />
+
 @{
     var me = S.MyRoster;
     var gap = T.Deadline - S.Week;
 }
 
 <section class="card deadline @(gap < 0 ? "past" : gap <= 1 ? "soon" : "")">
-    <span class="dl-ico">⏰</span>
+    <span class="dl-ico"><Icon Name="calendar" /></span>
     <div class="dl-main">
         <div class="dl-big">Trade deadline: @T.DeadlineText</div>
         <div class="muted small">
@@ -77,7 +79,7 @@ else
         case "check":
             var partner = Partner();
             <section class="card switch">
-                <div class="card-h"><span>🤝 Trade checker</span></div>
+                <div class="card-h"><span class="h-ico"><Icon Name="swap" /> Trade checker</span></div>
                 <div class="muted small">Pick who you'd give and who you'd get. Tap a photo to open the player card.</div>
                 <select value="@partner?.RosterId" @onchange="PickPartner">
                     @foreach (var r in S.Rosters.Where(r => !S.IsMine(r)).OrderBy(S.TeamName))

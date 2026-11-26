@@ -1,0 +1,32 @@
+@* A friendly empty or error card: icon, short title, one line of help, and an optional button.
+   <EmptyState Icon="calendar" Title="Bye week" Text="No matchup this week." />
+   <EmptyState Icon="offline" Title="Can't reach Sleeper" Text="..." Bad="true" ActionText="Try again" OnAction="Retry" /> *@
+<div class="card empty @(Bad ? "bad" : "")" role="@(Bad ? "alert" : "status")">
+    <span class="empty-ico"><Icon Name="@Icon" /></span>
+    <div class="empty-title">@Title</div>
+    @if (Text is { Length: > 0 }) { <div class="empty-text">@Text</div> }
+    @ChildContent
+    @if (ActionText is { Length: > 0 })
+    {
+        @if (Href is not null) { <a class="btn primary" href="@Href">@ActionText</a> }
+        else { <button class="btn primary" @onclick="Run" disabled="@busy">@if (busy) { <Icon Name="refresh" Class="spin-ico" /> } @ActionText</button> }
+    }
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "search";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public bool Bad { get; set; }
+    [Parameter] public string? ActionText { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public EventCallback OnAction { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    bool busy;
+    async Task Run()
+    {
+        busy = true;
+        try { await OnAction.InvokeAsync(); } finally { busy = false; }
+    }
+}

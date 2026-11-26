@@ -181,7 +181,7 @@ public sealed class BuzzService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(ex);
+            Console.WriteLine(ex);
         }
         Refreshing = false;
         Changed?.Invoke();
@@ -199,7 +199,7 @@ public sealed class BuzzService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Buzz: {key} failed: {ex.Message}");
+            Console.WriteLine($"Buzz: {key} failed: {ex.Message}");
             count(src, false);
             // Keep what we had, and wait the normal 15 minutes before trying a blocked source again.
             cache.Buckets[key] = new BuzzBucket { At = DateTimeOffset.UtcNow, Items = cache.Buckets.GetValueOrDefault(key)?.Items ?? [] };
@@ -266,13 +266,13 @@ public sealed class BuzzService : IAsyncDisposable
             var json = await js.InvokeAsync<string?>("localStorage.getItem", CacheKey);
             if (json is { Length: > 0 } && JsonSerializer.Deserialize(json, BuzzJson.Default.BuzzCache) is { Version: 1 } c) cache = c;
         }
-        catch (Exception ex) { Console.Error.WriteLine($"Buzz cache unreadable, starting fresh: {ex.Message}"); }
+        catch (Exception ex) { Console.WriteLine($"Buzz cache unreadable, starting fresh: {ex.Message}"); }
     }
 
     async Task SaveCache()
     {
         try { await js.InvokeVoidAsync("localStorage.setItem", CacheKey, JsonSerializer.Serialize(cache, BuzzJson.Default.BuzzCache)); }
-        catch (Exception ex) { Console.Error.WriteLine($"Buzz cache not saved: {ex.Message}"); }
+        catch (Exception ex) { Console.WriteLine($"Buzz cache not saved: {ex.Message}"); }
     }
 
     // ───────────── ESPN ids ─────────────
@@ -293,7 +293,7 @@ public sealed class BuzzService : IAsyncDisposable
         {
             await gate.WaitAsync();
             try { cache.Teams[t] = await EspnTeam(t); }
-            catch (Exception ex) { Console.Error.WriteLine($"Buzz: ESPN roster {t} failed: {ex.Message}"); }
+            catch (Exception ex) { Console.WriteLine($"Buzz: ESPN roster {t} failed: {ex.Message}"); }
             finally { gate.Release(); }
         }));
 
@@ -329,7 +329,7 @@ public sealed class BuzzService : IAsyncDisposable
             foreach (var it in doc.RootElement.GetProperty("items").EnumerateArray())
                 if (BuzzRules.NormName(Str(it, "displayName")) == want) return Str(it, "id");
         }
-        catch (Exception ex) { Console.Error.WriteLine($"Buzz: ESPN search failed: {ex.Message}"); }
+        catch (Exception ex) { Console.WriteLine($"Buzz: ESPN search failed: {ex.Message}"); }
         return null;
     }
 

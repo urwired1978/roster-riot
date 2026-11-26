@@ -87,7 +87,7 @@ public sealed class LeagueService(SleeperClient sleeper, EspnClient espn, IJSRun
         catch (Exception ex)
         {
             Error = "Couldn't reach Sleeper. Check your connection and tap refresh.";
-            Console.Error.WriteLine(ex);
+            Console.WriteLine(ex);   // not Console.Error: in Blazor WASM that pops the "Something went wrong" bar for a handled error
             loadTask = null;
         }
         Changed?.Invoke();
@@ -146,7 +146,7 @@ public sealed class LeagueService(SleeperClient sleeper, EspnClient espn, IJSRun
         catch (Exception ex)
         {
             Error = "Refresh failed. Showing the last scores we had.";
-            Console.Error.WriteLine(ex);
+            Console.WriteLine(ex);
         }
         Refreshing = false;
         Changed?.Invoke();
@@ -154,12 +154,12 @@ public sealed class LeagueService(SleeperClient sleeper, EspnClient espn, IJSRun
 
     async Task<List<NflGame>> SafeGames()
     {
-        try { return await espn.Scoreboard(); } catch (Exception ex) { Console.Error.WriteLine(ex); return []; }
+        try { return await espn.Scoreboard(); } catch (Exception ex) { Console.WriteLine(ex); return []; }
     }
 
     static async Task<T?> Safe<T>(Func<Task<T?>> f) where T : class
     {
-        try { return await f(); } catch (Exception ex) { Console.Error.WriteLine(ex); return null; }
+        try { return await f(); } catch (Exception ex) { Console.WriteLine(ex); return null; }
     }
 
     void SetProjections(List<StatRow> rows)

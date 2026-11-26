@@ -80,7 +80,7 @@ public sealed class TradeService(LeagueService s, SleeperClient sleeper)
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(ex);
+            Console.WriteLine(ex);
             Error = "Couldn't load projections for the rest of the season. Tap refresh to try again.";
             loadTask = null;
         }

@@ -10,12 +10,13 @@
 }
 
 <div class="seg">
-    @foreach (var t in new[] { "Standings", "Power", "Scores", "Moves" })
+    @foreach (var t in new[] { "Standings", "Power", "Scores", "Activity" })
     {
         <button class="@(tab == t ? "on" : "")" @onclick="() => tab = t">@t</button>
     }
 </div>
 
+<div class="seg-body fade-in" @key="tab">
 @switch (tab)
 {
     case "Standings":
@@ -80,9 +81,9 @@
         <p class="muted small center">Small number = projected final. Bar = win chance.</p>
         break;
 
-    case "Moves":
+    case "Activity":
         <section class="card list">
-            @if (S.Moves.Count == 0) { <p class="muted">No moves in the last two weeks.</p> }
+            @if (S.Moves.Count == 0) { <p class="muted center">No trades or pickups in the last two weeks.</p> }
             @foreach (var t in S.Moves.Take(40))
             {
                 <div class="move">
@@ -106,6 +107,7 @@
         </section>
         break;
 }
+</div>
 
 <section class="card switch">
     <div class="card-h"><span>Whose app is this?</span></div>

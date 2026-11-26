@@ -1,9 +1,9 @@
 @inherits LivePage
-@* Small alert on a player's name: 📣 off-field or legal buzz, 🩹 injury/practice news, both from the last 72 hours.
+@* Small alert on a player's name: megaphone = off-field or legal buzz, cross = injury/practice news, both from the last 72 hours.
    Information only. It never changes projections or the Lineup Coach. *@
 @if (Pid is { Length: > 0 } && Buzz.AlertFor(Pid) is { } a)
 {
-    <span class="bzb @(a.Kind == BuzzAlertKind.OffField ? "off" : "inj")" title="@Tip(a)" aria-label="@Tip(a)">@(a.Kind == BuzzAlertKind.OffField ? "📣" : "🩹")</span>
+    <span class="bzb @(a.Kind == BuzzAlertKind.OffField ? "off" : "inj")" title="@Tip(a)" aria-label="@Tip(a)"><Icon Name="@(a.Kind == BuzzAlertKind.OffField ? "buzz" : "injury")" /></span>
 }
 
 @code {

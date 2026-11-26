@@ -3,6 +3,8 @@
 
 <PageTitle>NFL · Roster Riot</PageTitle>
 
+<button class="back" data-nav="back" onclick="history.back()"><Icon Name="chevron-left" />Back</button>
+
 @{
     var me = S.MyRoster;
     var starters = me?.Starters ?? [];
@@ -11,7 +13,7 @@
 }
 
 <h2 class="sec">NFL Week @S.Week</h2>
-@if (S.Games.Count == 0) { <div class="card empty">Couldn't load NFL games right now.</div> }
+@if (S.Games.Count == 0) { <EmptyState Icon="offline" Title="No games loaded" Text="ESPN didn't answer just now. Pull down to try again." /> }
 
 @foreach (var day in S.Games.GroupBy(g => g.Kickoff.ToLocalTime().Date))
 {
@@ -34,7 +36,7 @@
                 <div class="g-team @(lead ? "lead" : "")">
                     <img src="@(side.Logo ?? SleeperClient.TeamLogo(side.Abbr))" alt="" onerror="this.style.visibility='hidden'" />
                     <span class="g-name">@side.Name <small>@side.Record</small></span>
-                    @if (g.IsLive && g.PossessionTeamId == side.Id) { <span class="poss">🏈</span> }
+                    @if (g.IsLive && g.PossessionTeamId == side.Id) { <span class="poss" title="Has the ball"><Icon Name="football" /></span> }
                     <span class="g-score">@(g.HasStarted ? side.Score.ToString() : "")</span>
                 </div>
             }

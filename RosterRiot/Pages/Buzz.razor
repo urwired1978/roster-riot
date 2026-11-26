@@ -16,13 +16,13 @@
 
 <section class="card buzz-intro">
     <div class="card-h">
-        <span>📣 Player Buzz</span>
+        <span class="h-ico"><Icon Name="buzz" /> Player Buzz</span>
         @if (Buzz.Refreshing) { <span class="tag">CHECKING…</span> }
         else if (Buzz.UpdatedAt is { } t) { <span class="muted small">Checked @t.ToString("h:mm tt")</span> }
     </div>
     <p class="muted small">News and social chatter from the last 7 days. It's a heads-up for start/sit, not a stat:
         the Lineup Coach ignores it. <span class="tag chatter">UNVERIFIED CHATTER</span> means random people online, so check real news before you believe it.</p>
-    <p class="muted small">📣 = off-field or legal buzz · 🩹 = injury or practice news (last 3 days)</p>
+    <p class="muted small"><span class="bzb off"><Icon Name="buzz" /></span> off-field or legal buzz · <span class="bzb inj"><Icon Name="injury" /></span> injury or practice news (last 3 days)</p>
 </section>
 
 <div class="seg">

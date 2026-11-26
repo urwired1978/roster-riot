@@ -11,7 +11,7 @@
     var trend = S.TrendCount(Pid);
 }
 
-<button class="back" onclick="history.back()">‹ Back</button>
+<button class="back" data-nav="back" onclick="history.back()"><Icon Name="chevron-left" />Back</button>
 
 <section class="p-hero">
     <Headshot Pid="@Pid" Size="96" Class="big" />
@@ -31,9 +31,9 @@
             else { <a href="team/@owner.RosterId" class="tag">@S.TeamName(owner)</a> }
             @if (owner is not null && S.Pos(Pid) is "QB" or "RB" or "WR" or "TE" or "K")
             {
-                <a href="trades?p=@Pid" class="tag gold">🤝 @(S.IsMine(owner) ? "Shop him in a trade" : "Trade for him")</a>
+                <a href="trades?p=@Pid" class="tag gold"><Icon Name="swap" /> @(S.IsMine(owner) ? "Shop him in a trade" : "Trade for him")</a>
             }
-            @if (trend > 0) { <span class="tag hot">🔥 +@trend.ToString("N0") adds today</span> }
+            @if (trend > 0) { <span class="tag hot"><Icon Name="trending" /> +@trend.ToString("N0") adds today</span> }
         </div>
     </div>
 </section>
@@ -53,7 +53,7 @@
 @if (alert is not null)
 {
     <div class="alert @(alert.Kind == BuzzAlertKind.OffField ? "buzz-off" : "warn")">
-        @(alert.Kind == BuzzAlertKind.OffField ? "📣 Off-field buzz" : "🩹 Injury news") in the last 3 days@(alert.OnlyChatter ? ", from social posts only, so it's unverified" : "").
+        <Icon Name="@(alert.Kind == BuzzAlertKind.OffField ? "buzz" : "injury")" /> @(alert.Kind == BuzzAlertKind.OffField ? "Off-field buzz" : "Injury news") in the last 3 days@(alert.OnlyChatter ? ", from social posts only, so it's unverified" : "").
         Worth a look before you set your lineup. It doesn't change his projection.
     </div>
 }
@@ -76,11 +76,11 @@ else
 
 <h2 class="sec">Fantasy points by week</h2>
 <section class="card">
-    @if (season is null) { <div class="muted center">Loading…</div> }
+    @if (season is null) { <Skeleton Kind="chart" /> }
     else
     {
         <WeekBars Values="@season.Select(w => w.Points).ToList()" Average="@avg" />
-        <div class="muted small center">League scoring (full PPR) · dashed line = his average · – = didn't play</div>
+        <div class="muted small center bars-note">League scoring (full PPR) · dashed line = his average · – = didn't play</div>
     }
 </section>
 

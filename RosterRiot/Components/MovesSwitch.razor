@@ -1,0 +1,9 @@
+@* Top of the Moves tab: switches between Pickups and Trades. *@
+<nav class="seg seg-static" aria-label="Moves">
+    <a class="@(Active == "pickups" ? "on" : "")" href="waivers">Pickups</a>
+    <a class="@(Active == "trades" ? "on" : "")" href="trades">Trades</a>
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public string Active { get; set; } = "";
+}
