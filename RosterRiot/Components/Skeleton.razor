@@ -1,0 +1,57 @@
+@* Grey placeholder shapes shown while data loads, shaped like the screen that's coming.
+   Kind: "matchup" (hero + lineup), "list" (title + rows), "rows" (just rows in a card), "chart" (bars). *@
+@switch (Kind)
+{
+    case "chart":
+        <div class="skel-bars" aria-hidden="true">
+            @foreach (var h in ChartHeights) { <span class="skel" style="height:@(h)%"></span> }
+        </div>
+        break;
+
+    case "rows":
+        <section class="card list" aria-hidden="true">@Rows(Count)</section>
+        break;
+
+    case "list":
+        <div class="skeleton" aria-busy="true" aria-label="Loading">
+            <span class="skel skel-title"></span>
+            <section class="card list">@Rows(Count)</section>
+            <span class="skel skel-title"></span>
+            <section class="card list">@Rows(3)</section>
+        </div>
+        break;
+
+    default:
+        <div class="skeleton" aria-busy="true" aria-label="Loading">
+            <span class="skel skel-hero"></span>
+            <section class="card" style="display:flex;flex-direction:column;gap:10px">
+                <span class="skel skel-line w40"></span>
+                <span class="skel skel-line w80"></span>
+                <span class="skel skel-line w60"></span>
+            </section>
+            <section class="card list">@Rows(Count)</section>
+        </div>
+        break;
+}
+
+@code {
+    [Parameter] public string Kind { get; set; } = "matchup";
+    [Parameter] public int Count { get; set; } = 6;
+
+    static readonly int[] ChartHeights = [55, 70, 40, 85, 60, 45, 75, 50, 65, 35, 80, 58];
+
+    static RenderFragment Rows(int n) => __builder =>
+    {
+        for (var i = 0; i < n; i++)
+        {
+            <div class="skel-row">
+                <span class="skel skel-dot"></span>
+                <span class="skel-lines">
+                    <span class="skel skel-line @(i % 2 == 0 ? "w60" : "w80")"></span>
+                    <span class="skel skel-line w40" style="height:9px"></span>
+                </span>
+                <span class="skel skel-num"></span>
+            </div>
+        }
+    };
+}

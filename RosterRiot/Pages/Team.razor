@@ -13,7 +13,7 @@
 
 @if (r is null || row is null)
 {
-    <div class="card empty">Team not found.</div>
+    <EmptyState Icon="users" Title="Team not found" Text="That team isn't in this league anymore." ActionText="Back to my team" Href="team" />
 }
 else
 {
@@ -46,7 +46,7 @@ else
 
     <section class="card coach">
         <div class="card-h">
-            <span>🧠 Lineup Coach</span>
+            <span><Icon Name="coach" /> Lineup Coach</span>
             @if (adv.IsOptimal) { <span class="tag good">LOOKS OPTIMAL</span> }
             else { <span class="tag gold">+@F1(adv.Gain) PTS AVAILABLE</span> }
         </div>
@@ -64,7 +64,7 @@ else
         }
         @foreach (var al in adv.Alerts)
         {
-            <div class="alert @(al.Level == AlertLevel.Bad ? "bad" : "warn")">@(al.Level == AlertLevel.Bad ? "⛔" : "⚠️") @al.Text</div>
+            <div class="alert @(al.Level == AlertLevel.Bad ? "bad" : "warn")"><Icon Name="@(al.Level == AlertLevel.Bad ? "out" : "alert")" /><span>@al.Text</span></div>
         }
         @if (mine && !adv.IsOptimal) { <p class="muted small">Make the changes in the Sleeper app. This app can look but can't touch.</p> }
         <div class="coach-foot muted small">Projected starters: <b class="txt">@F1(adv.CurrentProj)</b> · Best possible: <b class="txt">@F1(adv.OptimalProj)</b></div>
@@ -96,7 +96,7 @@ else
     <h2 class="sec">Points every week</h2>
     <section class="card">
         <WeekBars Values="@row.Weekly.Select(x => (double?)x).ToList()" Average="@(table.SelectMany(t => t.Weekly).DefaultIfEmpty(0).Average())" />
-        <div class="muted small center">Dashed line = league average score</div>
+        <div class="muted small center bars-note">Dashed line = league average score</div>
     </section>
 
     <h2 class="sec">Position strength</h2>

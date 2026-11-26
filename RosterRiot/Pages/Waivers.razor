@@ -28,14 +28,14 @@
         }
         else
         {
-            <span>Bid big on the 🔥 guys. Everyone else is chasing them too.</span>
+            <span>Bid big on the trending guys. Everyone else is chasing them too.</span>
         }
     </div>
 </section>
 
 @if (hot.Count > 0)
 {
-    <h2 class="sec">🔥 Trending pickups across Sleeper (24h)</h2>
+    <h2 class="sec"><Icon Name="trending" /> Trending pickups <small>All of Sleeper · 24h</small></h2>
     <div class="hscroll">
         @foreach (var t in hot)
         {
@@ -58,7 +58,7 @@
     }
 </div>
 
-<section class="card list">
+<section class="card list fade-in" @key="pos">
     @foreach (var pid in fa)
     {
         var (weak, weakProj) = S.WeakestStarterFor(S.Pos(pid));
@@ -70,7 +70,7 @@
             }
         </PlayerRow>
     }
-    @if (fa.Count == 0) { <p class="muted">No free agents with projections at this position.</p> }
+    @if (fa.Count == 0) { <p class="muted center">No free agents with projections at this position.</p> }
 </section>
 <p class="muted small center">▲ = projected points more than your weakest starter who plays that spot.</p>
 

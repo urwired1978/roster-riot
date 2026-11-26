@@ -11,7 +11,7 @@
     var trend = S.TrendCount(Pid);
 }
 
-<button class="back" onclick="history.back()">‹ Back</button>
+<button class="back" data-nav="back" onclick="history.back()"><Icon Name="chevron-left" />Back</button>
 
 <section class="p-hero">
     <Headshot Pid="@Pid" Size="96" Class="big" />
@@ -28,7 +28,7 @@
             @if (owner is null) { <span class="tag good">FREE AGENT</span> }
             else if (S.IsMine(owner)) { <span class="tag gold">ON YOUR TEAM</span> }
             else { <a href="team/@owner.RosterId" class="tag">@S.TeamName(owner)</a> }
-            @if (trend > 0) { <span class="tag hot">🔥 +@trend.ToString("N0") adds today</span> }
+            @if (trend > 0) { <span class="tag hot"><Icon Name="trending" /> +@trend.ToString("N0") adds today</span> }
         </div>
     </div>
 </section>
@@ -43,11 +43,11 @@
 
 <h2 class="sec">Fantasy points by week</h2>
 <section class="card">
-    @if (season is null) { <div class="muted center">Loading…</div> }
+    @if (season is null) { <Skeleton Kind="chart" /> }
     else
     {
         <WeekBars Values="@season.Select(w => w.Points).ToList()" Average="@avg" />
-        <div class="muted small center">League scoring (full PPR) · dashed line = his average · – = didn't play</div>
+        <div class="muted small center bars-note">League scoring (full PPR) · dashed line = his average · – = didn't play</div>
     }
 </section>
 

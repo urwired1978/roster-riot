@@ -1,7 +1,8 @@
-﻿@inherits LayoutComponentBase
-@implements IDisposable
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
 @inject LeagueService S
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <div class="shell">
     <header class="topbar">
@@ -12,66 +13,101 @@
                 <span class="brand-sub">@(S.Ready ? S.TeamName(S.MyRoster) : "Loading") · @(S.League?.Name ?? "Sleeper") · Wk @S.Week</span>
             </span>
         </a>
-        <button class="refresh @(S.Refreshing ? "spin" : "")" @onclick="Refresh" aria-label="Refresh">
+        <button class="refresh @(S.Refreshing ? "spin" : "")" @onclick="Refresh" aria-label="Refresh scores">
             @if (S.Games.Any(g => g.IsLive)) { <span class="live-dot"></span> }
-            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" /></svg>
+            <Icon Name="refresh" />
         </button>
     </header>
 
-    @if (S.Error is { } err)
+    @if (S.Error is { } err && S.Ready)
     {
-        <div class="banner bad" @onclick="Refresh">@err</div>
+        <button class="banner bad" @onclick="Refresh">
+            <Icon Name="offline" />
+            <span>@err</span>
+            <span class="banner-act">Retry</span>
+        </button>
     }
 
     <main class="content">
         @if (!S.Ready)
         {
-            @if (S.Error is null)
+            @if (S.Error is { } loadErr)
             {
-                <div class="splash">
-                    <img src="img/logo-full.png" alt="Roster Riot" class="splash-logo" />
-                    <div class="splash-text">Loading the league…</div>
-                </div>
+                <EmptyState Icon="offline" Bad="true" Title="Can't reach Sleeper" Text="@loadErr" ActionText="Try again" OnAction="Refresh" />
+            }
+            else
+            {
+                <Skeleton Kind="@SkeletonKind" />
             }
         }
         else
         {
             @Body
             <footer class="foot">
-                <img class="foot-mark" src="img/wordmark.png" alt="Roster Riot. Your team. Every move." />
-                @if (S.UpdatedAt is { } t) { <span>Updated @t.ToLocalTime().ToString("h:mm:ss tt")</span> }
-                <span>Data: Sleeper and ESPN · Built with Claude Code</span>
+                <span class="foot-brand"><img src="img/rr.png" alt="" /><span>ROSTER <b>RIOT</b></span></span>
+                @if (S.UpdatedAt is { } t) { <span>Updated @t.ToLocalTime().ToString("h:mm tt")</span> }
+                <span>Data from Sleeper and ESPN · Built with Claude Code</span>
             </footer>
         }
     </main>
 
     <nav class="tabbar">
-        <NavLink class="tab" href="" Match="NavLinkMatch.All">
-            <svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4" /></svg><span>Matchup</span>
-        </NavLink>
-        <NavLink class="tab" href="team">
-            <svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0M4 21c0-4 3.5-6 8-6s8 2 8 6M12 7V3" /></svg><span>My Team</span>
-        </NavLink>
-        <NavLink class="tab" href="league">
-            <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" /></svg><span>League</span>
-        </NavLink>
-        <NavLink class="tab" href="waivers">
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /><circle cx="12" cy="12" r="9" /></svg><span>Pickups</span>
-        </NavLink>
-        <NavLink class="tab" href="nfl">
-            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9.5" ry="5.5" transform="rotate(-35 12 12)" /><path d="M9.5 14.5l5-5M10.5 11.5l2 2M12.5 9.5l2 2" /></svg><span>NFL</span>
-        </NavLink>
+        <NavLink class="tab" href="" Match="NavLinkMatch.All"><Icon Name="matchup" /><span>Matchup</span></NavLink>
+        <NavLink class="tab" href="team"><Icon Name="team" /><span>My Team</span></NavLink>
+        <NavLink class="tab" href="league"><Icon Name="league" /><span>League</span></NavLink>
+        <NavLink class="tab" href="waivers"><Icon Name="pickups" /><span>Pickups</span></NavLink>
+        <NavLink class="tab" href="nfl"><Icon Name="nfl" /><span>NFL</span></NavLink>
     </nav>
 </div>
 
 @code {
+    IJSObjectReference? polish;
+    DotNetObjectReference<MainLayout>? self;
+    DateTimeOffset? lastUpdate;
+
+    // Loading placeholder shaped like the screen being opened.
+    string SkeletonKind => Nav.ToBaseRelativePath(Nav.Uri).Split('/', '?')[0] switch
+    {
+        "" or "matchup" => "matchup",
+        _ => "list"
+    };
+
     protected override async Task OnInitializedAsync()
     {
         S.Changed += OnChanged;
         await S.EnsureLoadedAsync();
     }
 
-    void OnChanged() => InvokeAsync(StateHasChanged);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            self = DotNetObjectReference.Create(this);
+            polish = await JS.InvokeAsync<IJSObjectReference>("import", Nav.BaseUri + "js/rr-polish.js");
+            await polish.InvokeVoidAsync("init", self);
+        }
+        catch (Exception ex) { Console.WriteLine($"Polish module didn't load: {ex.Message}"); }
+    }
+
+    void OnChanged()
+    {
+        // New scores: let the numbers on screen ease to their new values.
+        if (S.UpdatedAt != lastUpdate && polish is not null && lastUpdate is not null) _ = polish.InvokeVoidAsync("markLive").AsTask();
+        lastUpdate = S.UpdatedAt;
+        InvokeAsync(StateHasChanged);
+    }
+
     Task Refresh() => S.RefreshAsync(full: true);
-    public void Dispose() => S.Changed -= OnChanged;
+
+    /// <summary>Called by js/rr-polish.js when the user pulls down past the threshold and lets go.</summary>
+    [JSInvokable]
+    public Task PullRefresh() => S.RefreshAsync(full: true);
+
+    public async ValueTask DisposeAsync()
+    {
+        S.Changed -= OnChanged;
+        self?.Dispose();
+        if (polish is not null) { try { await polish.DisposeAsync(); } catch (JSDisconnectedException) { } }
+    }
 }
