@@ -4,7 +4,7 @@
     @if (Slot is not null) { <PosChip Pos="@Slot" /> }
     <Headshot Pid="@Pid" Size="42" />
     <span class="prow-main">
-        <span class="prow-name">@S.Name(Pid) <InjuryTag Status="@S.Injury(Pid)" /></span>
+        <span class="prow-name">@S.Name(Pid) <InjuryTag Status="@S.Injury(Pid)" /> <BuzzBadge Pid="@Pid" /></span>
         <span class="prow-sub"><b>@S.Pos(Pid)</b> <GameTag Pid="@Pid" /></span>
     </span>
     <span class="prow-nums">

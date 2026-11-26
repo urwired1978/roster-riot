@@ -16,5 +16,6 @@ builder.Services.AddScoped<SleeperClient>();
 builder.Services.AddScoped<EspnClient>();
 builder.Services.AddScoped<LeagueService>();
 builder.Services.AddScoped<TradeService>();
+builder.Services.AddScoped<BuzzService>();
 
 await builder.Build().RunAsync();

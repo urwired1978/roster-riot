@@ -1,0 +1,22 @@
+@inherits LivePage
+@* "Buzz: 2 heads-ups on your team" shortcut card for the Matchup and My Team pages. *@
+@{
+    var mine = Buzz.Mine.Select(Buzz.AlertFor).OfType<BuzzAlert>().ToList();
+    var opp = Buzz.OpponentStarters.Where(p => !Buzz.Mine.Contains(p)).Select(Buzz.AlertFor).OfType<BuzzAlert>().ToList();
+    var off = mine.Count(a => a.Kind == BuzzAlertKind.OffField);
+}
+@if (mine.Count + opp.Count > 0)
+{
+    <a class="card coach-mini buzz-mini @(off > 0 ? "hot" : "")" href="buzz">
+        <span class="coach-ico">📣</span>
+        <span>
+            <b>Player Buzz</b><br />
+            @if (mine.Count > 0)
+            {
+                <span>@($"{mine.Count} heads-up{(mine.Count == 1 ? "" : "s")} on your team{(off > 0 ? $" ({off} off-field)" : "")}. ")</span>
+            }
+            @if (opp.Count > 0) { <span class="muted">@($"{opp.Count} on their starters.")</span> }
+        </span>
+        <span class="chev">›</span>
+    </a>
+}

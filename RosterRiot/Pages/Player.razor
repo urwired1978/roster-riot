@@ -22,6 +22,7 @@
             @if (info?.Team is { } team) { <img class="p-logo" src="@SleeperClient.TeamLogo(team)" alt="" /> <span>@team</span> }
             @if (info?.Number is { } num) { <span class="muted">#@num</span> }
             <InjuryTag Status="@info?.InjuryStatus" />
+            <BuzzBadge Pid="@Pid" />
         </div>
         @if (info?.InjuryStatus is { } inj) { <div class="p-inj">@inj@(info.InjuryBodyPart is { } bp ? $" ({bp})" : "")</div> }
         <div class="p-owner">
@@ -44,6 +45,34 @@
     <div class="pw-cell"><div class="pw-num">@played.Count</div><div class="muted small">Games</div></div>
 </section>
 <div class="center"><GameTag Pid="@Pid" /></div>
+
+@{
+    var buzz = Buzz.For(Pid);
+    var alert = Buzz.AlertFor(Pid);
+}
+@if (alert is not null)
+{
+    <div class="alert @(alert.Kind == BuzzAlertKind.OffField ? "buzz-off" : "warn")">
+        @(alert.Kind == BuzzAlertKind.OffField ? "📣 Off-field buzz" : "🩹 Injury news") in the last 3 days@(alert.OnlyChatter ? ", from social posts only, so it's unverified" : "").
+        Worth a look before you set your lineup. It doesn't change his projection.
+    </div>
+}
+<h2 class="sec">Buzz · last 7 days</h2>
+@if (!Buzz.IsFollowed(Pid))
+{
+    <div class="card empty small">Buzz follows players, not team defenses.</div>
+}
+else if (buzz.Count == 0)
+{
+    <div class="card empty small">@(Buzz.Refreshing ? "Checking the news…" : "No news or chatter about him in the last 7 days.")</div>
+}
+else
+{
+    <section class="bz-list">
+        @foreach (var i in buzz.Take(buzzLimit)) { <BuzzCard Item="@i" ShowPlayer="false" /> }
+    </section>
+    @if (buzz.Count > buzzLimit) { <button class="btn" @onclick="@(() => buzzLimit += 10)">More buzz (@(buzz.Count - buzzLimit))</button> }
+}
 
 <h2 class="sec">Fantasy points by week</h2>
 <section class="card">
@@ -82,6 +111,7 @@
     [Parameter] public string Pid { get; set; } = "";
     List<WeekPoints>? season;
     string? loadedFor;
+    int buzzLimit = 5;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -89,6 +119,8 @@
         if (loadedFor == Pid) return;
         loadedFor = Pid;
         season = null;
+        buzzLimit = 5;
+        Buzz.Follow(Pid);   // free agents and other teams' players get buzz too while their card is open
         season = await S.PlayerSeasonAsync(Pid);
     }
 }
