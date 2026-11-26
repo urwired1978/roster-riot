@@ -1,0 +1,46 @@
+@inherits LivePage
+@* One buzz item: who, what it's about, where it came from, and a link to the original. Text only, no images or video. *@
+@{
+    var i = Item;
+}
+<article class="bz @(i.Social ? "social" : "news")">
+    <div class="bz-top">
+        @if (ShowPlayer)
+        {
+            <a class="bz-who" href="player/@i.Pid"><Headshot Pid="@i.Pid" Size="26" /><b>@S.Short(i.Pid)</b></a>
+            @if (Buzz.OpponentStarters.Contains(i.Pid) && !Buzz.Mine.Contains(i.Pid)) { <span class="tag opp-tag">OPP</span> }
+        }
+        @if (i.Category != BuzzCategory.General) { <span class="bz-cat cat-@BuzzRules.Css(i.Category)">@BuzzRules.Label(i.Category)</span> }
+        <span class="bz-when muted">@Ago(i.At)</span>
+    </div>
+    <div class="bz-title">@i.Title</div>
+    @if (i.Snippet is { Length: > 0 } sn) { <div class="bz-snip">@sn</div> }
+    <div class="bz-foot">
+        @if (i.Social)
+        {
+            <span class="tag chatter">UNVERIFIED CHATTER</span>
+            <span class="muted">@i.Source @i.Author</span>
+        }
+        else
+        {
+            <span class="tag newstag">NEWS</span>
+            <span class="muted">@i.Source</span>
+        }
+        @if (i.Url is { Length: > 0 } u) { <a class="bz-link" href="@u" target="_blank" rel="noopener noreferrer">Open ↗</a> }
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public BuzzItem Item { get; set; } = default!;
+    [Parameter] public bool ShowPlayer { get; set; } = true;
+
+    public static string Ago(DateTimeOffset at)
+    {
+        var d = DateTimeOffset.UtcNow - at;
+        if (d.TotalMinutes < 1) return "just now";
+        if (d.TotalMinutes < 60) return $"{(int)d.TotalMinutes}m ago";
+        if (d.TotalHours < 24) return $"{(int)d.TotalHours}h ago";
+        if (d.TotalDays < 2) return "yesterday";
+        return at.ToLocalTime().ToString("ddd");
+    }
+}

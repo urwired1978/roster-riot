@@ -1,0 +1,102 @@
+@page "/buzz"
+@inherits LivePage
+
+<PageTitle>Buzz · Roster Riot</PageTitle>
+
+@{
+    var mine = Buzz.Mine;
+    var opp = Buzz.OpponentStarters.Where(p => !mine.Contains(p)).ToHashSet();
+    var pool = who == "opp" ? opp : mine;
+    var all = Buzz.All(pool);
+    var items = all.Where(i => cat is null || i.Category == cat).Where(i => !newsOnly || !i.Social).ToList();
+    var alerts = pool.Select(p => (Pid: p, A: Buzz.AlertFor(p))).Where(x => x.A is not null)
+        .OrderBy(x => x.A!.Kind == BuzzAlertKind.OffField ? 0 : 1).ThenByDescending(x => x.A!.Top.At).ToList();
+    var oppName = S.MyMatchup()?.B?.Name;
+}
+
+<section class="card buzz-intro">
+    <div class="card-h">
+        <span>📣 Player Buzz</span>
+        @if (Buzz.Refreshing) { <span class="tag">CHECKING…</span> }
+        else if (Buzz.UpdatedAt is { } t) { <span class="muted small">Checked @t.ToString("h:mm tt")</span> }
+    </div>
+    <p class="muted small">News and social chatter from the last 7 days. It's a heads-up for start/sit, not a stat:
+        the Lineup Coach ignores it. <span class="tag chatter">UNVERIFIED CHATTER</span> means random people online, so check real news before you believe it.</p>
+    <p class="muted small">📣 = off-field or legal buzz · 🩹 = injury or practice news (last 3 days)</p>
+</section>
+
+<div class="seg">
+    <button class="@(who == "mine" ? "on" : "")" @onclick="@(() => who = "mine")">My team</button>
+    <button class="@(who == "opp" ? "on" : "")" @onclick="@(() => who = "opp")">@(oppName is { } on ? $"vs. {on}" : "Opponent")</button>
+</div>
+
+@if (alerts.Count > 0)
+{
+    <h2 class="sec">Heads up</h2>
+    <section class="card list">
+        @foreach (var (pid, a) in alerts)
+        {
+            <a class="prow bz-alert" href="player/@pid">
+                <Headshot Pid="@pid" Size="38" />
+                <span class="prow-main">
+                    <span class="prow-name">@S.Name(pid) <InjuryTag Status="@S.Injury(pid)" /> <BuzzBadge Pid="@pid" /></span>
+                    <span class="bz-alert-txt">@(a!.Kind == BuzzAlertKind.OffField ? "Off-field" : "Injury news")@(a.OnlyChatter ? " (chatter only)" : ""): @a.Top.Title</span>
+                </span>
+                <span class="chev">›</span>
+            </a>
+        }
+    </section>
+}
+
+<h2 class="sec">Latest</h2>
+<div class="chips">
+    <button class="chip @(cat is null ? "on" : "")" @onclick="@(() => cat = null)">All</button>
+    @foreach (var c in Cats)
+    {
+        var n = all.Count(i => i.Category == c);
+        if (n == 0) continue;
+        <button class="chip @(cat == c ? "on" : "")" @onclick="@(() => cat = c)">@BuzzRules.Label(c) <small>@n</small></button>
+    }
+    <button class="chip @(newsOnly ? "on" : "")" @onclick="@(() => newsOnly = !newsOnly)">News only</button>
+</div>
+
+@if (items.Count == 0)
+{
+    <div class="card empty">
+        @if (Buzz.Refreshing && all.Count == 0) { <span>Checking ESPN, CBS Sports and Bluesky…</span> }
+        else { <span>Nothing here from the last 7 days.</span> }
+    </div>
+}
+else
+{
+    <section class="bz-list">
+        @foreach (var i in items.Take(limit)) { <BuzzCard Item="@i" /> }
+    </section>
+    @if (items.Count > limit) { <button class="btn" @onclick="@(() => limit += 25)">Show more (@(items.Count - limit) left)</button> }
+}
+
+<h2 class="sec">Where this comes from</h2>
+<section class="card src">
+    @foreach (var src in Buzz.Sources)
+    {
+        <div class="src-row">
+            <span class="src-ok @(src.At is null ? "" : src.Ok ? "ok" : "bad")">@(src.At is null ? "•" : src.Ok ? "✓" : "✕")</span>
+            <span class="src-name">@src.Name</span>
+            <span class="muted small">@(src.Note ?? (src.At is { } at ? $"OK at {at.ToLocalTime():h:mm tt}" : ""))</span>
+        </div>
+    }
+    <div class="muted small src-off">
+        Not used: Reddit (blocks apps that aren't logged in), X/Twitter (login and a paid API), TikTok (no public API),
+        Google News (blocks phone browsers). Checked every 15 minutes while the app is open.
+    </div>
+</section>
+
+@code {
+    string who = "mine";
+    BuzzCategory? cat;
+    bool newsOnly;
+    int limit = 25;
+
+    static readonly BuzzCategory[] Cats =
+        [BuzzCategory.OffField, BuzzCategory.Legal, BuzzCategory.Injury, BuzzCategory.Role, BuzzCategory.Coach, BuzzCategory.Weather, BuzzCategory.General];
+}

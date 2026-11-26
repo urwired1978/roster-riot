@@ -70,6 +70,8 @@ else
         <div class="coach-foot muted small">Projected starters: <b class="txt">@F1(adv.CurrentProj)</b> · Best possible: <b class="txt">@F1(adv.OptimalProj)</b></div>
     </section>
 
+    @if (mine) { <BuzzMini /> }
+
     <h2 class="sec">Starters</h2>
     <section class="card list">
         @for (var i = 0; i < slots.Count; i++)

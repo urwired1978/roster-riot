@@ -98,6 +98,8 @@ public sealed class PlayerInfo
     public int? YearsExp { get; set; }
     public string? College { get; set; }
     public int? Number { get; set; }
+    /// <summary>ESPN athlete id. Sleeper often leaves this empty; Buzz falls back to ESPN team rosters.</summary>
+    public long? EspnId { get; set; }
 
     public string FullName => $"{FirstName} {LastName}".Trim();
     public string ShortName => string.IsNullOrEmpty(FirstName) ? LastName ?? "" : $"{FirstName[0]}. {LastName}";

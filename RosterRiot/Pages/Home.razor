@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @page "/matchup/{Id:int}"
 @inherits LivePage
 
@@ -95,6 +95,8 @@ else
         }
     }
 
+    @if (isMine) { <BuzzMini /> }
+
     <section class="card versus">
         @for (var i = 0; i < a.Lines.Count; i++)
         {
@@ -104,7 +106,7 @@ else
                 <a class="vs-side left" href="@(la.Pid is null ? null : $"player/{la.Pid}")">
                     <Headshot Pid="@la.Pid" Size="36" />
                     <span class="vs-txt">
-                        <span class="vs-name">@S.Last(la.Pid) <InjuryTag Status="@S.Injury(la.Pid)" /></span>
+                        <span class="vs-name">@S.Last(la.Pid) <InjuryTag Status="@S.Injury(la.Pid)" /> <BuzzBadge Pid="@la.Pid" /></span>
                         <span class="vs-sub"><GameTag Pid="@la.Pid" Compact="true" /></span>
                     </span>
                     <span class="vs-pts @PtsClass(la, lb)">@F1(la.Points)<small>@F1(la.Proj)</small></span>
@@ -113,7 +115,7 @@ else
                 <a class="vs-side right" href="@(lb?.Pid is null ? null : $"player/{lb.Pid}")">
                     <span class="vs-pts @PtsClass(lb, la)">@F1(lb?.Points ?? 0)<small>@F1(lb?.Proj ?? 0)</small></span>
                     <span class="vs-txt">
-                        <span class="vs-name">@S.Last(lb?.Pid) <InjuryTag Status="@S.Injury(lb?.Pid)" /></span>
+                        <span class="vs-name"><BuzzBadge Pid="@lb?.Pid" /> @S.Last(lb?.Pid) <InjuryTag Status="@S.Injury(lb?.Pid)" /></span>
                         <span class="vs-sub"><GameTag Pid="@lb?.Pid" Compact="true" /></span>
                     </span>
                     <Headshot Pid="@lb?.Pid" Size="36" />

@@ -1,0 +1,14 @@
+@inherits LivePage
+@* Small alert on a player's name: 📣 off-field or legal buzz, 🩹 injury/practice news, both from the last 72 hours.
+   Information only. It never changes projections or the Lineup Coach. *@
+@if (Pid is { Length: > 0 } && Buzz.AlertFor(Pid) is { } a)
+{
+    <span class="bzb @(a.Kind == BuzzAlertKind.OffField ? "off" : "inj")" title="@Tip(a)" aria-label="@Tip(a)">@(a.Kind == BuzzAlertKind.OffField ? "📣" : "🩹")</span>
+}
+
+@code {
+    [Parameter] public string? Pid { get; set; }
+
+    static string Tip(BuzzAlert a) =>
+        (a.Kind == BuzzAlertKind.OffField ? "Off-field buzz" : "Injury news") + (a.OnlyChatter ? " (unverified chatter)" : "") + ": " + a.Top.Title;
+}
